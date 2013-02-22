@@ -50,8 +50,8 @@ class Config {
 	private function extract_initial($lines){
 		foreach($lines as $line){
 			preg_match(self::KEY_VALUE_REGEX,$line,$matches);
-			$key = $matches[1];
-			$value = is_numeric($matches[2]) ? $matches[2] + 0 : $matches[2];
+			$key = trim($matches[1]);
+			$value = is_numeric($matches[2]) ? $matches[2] + 0 : trim($matches[2]);
 			$this->$key = $value;
 		}
 	}
@@ -60,15 +60,15 @@ class Config {
 		$this->hosts = $lines;
 	}
 	
-	private function extract_layouts($lines){
-		$this->layouts = array();
+	private function extract_pageSizes($lines){
+		$this->pageSizes = array();
 		foreach($lines as $line){
 			preg_match(self::LAYOUT_REGEX,$line,$matches);
-			$layout = new stdClass();
-			$layout->name = trim($matches[1]);
-			$layout->width = $matches[2]+0;
-			$layout->height = $matches[3]+0;
-			$this->layouts[] = $layout;
+			$pageSize = new stdClass();
+			$pageSize->name = trim($matches[1]);
+			$pageSize->width = $matches[2]+0;
+			$pageSize->height = $matches[3]+0;
+			$this->pageSizes[] = $pageSize;
 		}
 	}
 }

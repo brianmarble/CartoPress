@@ -1,95 +1,127 @@
 <?php
 
-
-
-
-
+ini_set("html_errors",false);
 /**
  * Main class, is created on every request and handles input and output
  * processing.
  * 
- * 
- * Action paramater
- * The url must contain the paramater 'a' with one of the following values
- *   - 'info' Request Capabilities specification json data
- *   - 'print' Request The creation and delivery of a pdf map
- *   - 'create' Request The creation of a pdf map and a link to access it
+ * GET  http:// ... /                 retrieve information about this instance of cartopress
+ * GET  http:// ... /formats          list of formats
+ * POST http:// ... /pdfs/{id}        create a pdf with the given id
+ * GET  http:// ... /pdfs/{id}        retrieve the pdf with the given id
  */
 class CartoPress {
-	
-	const ACTION_INFO = 'info';
-	const ACTION_PRINT = 'print';
-	const ACTION_CREATE = 'create';
 	
 	public static $config;
 	
 	public function __construct(){
-		try{
-			
-			$config = new Config();
-			
-			if(!array_key_exists('a',$_GET))throw new CartoPressException("Action Paramater 'a' was not set in url.");
-			$action = $_GET['a'];
-			
-			if($action == self::ACTION_INFO){
-				$this->outputInfoJson($config);
-			}
-			
-			if($action == self::ACTION_PRINT || $action == self::ACTION_CREATE){
-				$spec = json_decode(file_get_contents("php://input"));
-				if(empty($spec))throw new CartoPressException("No print specification data sent!");
-				$pdf = new MapPdf($config,$spec);
-			}
-			
-			if($action == self::ACTION_PRINT){
-				$pdf->output();
-			}
-			
-			if($action == self::ACTION_CREATE){
-				$filename = $pdf->saveTmp();
-				echo json_encode(array("url"=>$filename));
-			}
 
-		} catch (CartoPressException $e){
-			$this->outputError($e);
+		self::$config = new Config();
+
+		$request = $this->getRestRequest();
+
+		if(count($request) == 1 && empty($request[0])){
+			$this->outputInfo();
+		} else if ($request[0] == 'formats' && count($request) == 1 ){
+			$this->outputFormatList();
+		} else if ($request[0] == 'pdfs' && count($request) == 2){
+			$this->handlePdf($request);
+		} else {
+			if(false)header("HTTP/1.0 404 Not Found");
+			else var_dump($_SERVER,$request);
 		}
+		die();
+		
 	}
 	
-	private function outputInfoJson(){
-		header("Content-type: application/json");
-		echo json_encode(self::config);
-	}
-	
-	private function outputError($e){
-		if(ini_get("display_errors")){
-			if(!headers_sent()){
-				header("Content-type: text/plain");
+	private function outputFormatList(){
+		$accept = $_SERVER['HTTP_ACCEPT'];
+		if(strstr($accept,'application/json') != -1 || strstr($accept,'application/*') != -1 || strstr($accept,'*/*') != -1){
+			$margins = self::$config->margin * 2;
+			
+			$data = array();
+			foreach(self::$config->pageSizes as $layout){
+				$size = MapPDF::getPageSizeFromFormat($layout->name);
+				var_dump($size[0]/72,$size[1]/72);
+				die();
+				$data[] = array(
+					'name' => $layout->name,
+					'ratio' => ($layout->width - $margins) / ($layout->height - $margins)
+				);
 			}
-			echo "CartoPress Error: ";
-			echo $e->getMessage();
-			echo "\n";
-			echo $e->getTraceAsString();
+			
+			header("Content-type: application/json");
+			echo json_encode($data);		
+		} else {
+			header("HTTP/1.0 406 Not Acceptable");
 		}
+		
+	}
+	
+	private function handlePdf($request){
+		$method = $_SERVER['REQUEST_METHOD'];
+		$filename = self::$config->pdfDir."/".$request[1];
+		if($method == 'GET'){
+			if(file_exists($filename)){
+				header("Content-type: application/x-pdf");
+				echo file_get_contents($filename);
+			} else {
+				header("HTTP/1.0 404 Not Found");
+			}
+		} else if ($method == 'POST'){
+			if($_SERVER['CONTENT_TYPE'] == 'application/json'){
+				$data = json_decode(file_get_contents('php://input'));
+				
+				$pdf = new PDFBuilder($data);
+				if($pdf && $pdf->saveTo($filename)){
+					header("HTTP/1.0 201 Created");
+					header("Content-type: application/json");
+					echo json_encode(array("id"=>$request[1]));
+				} else {
+					header("HTTP/1.0 200 Created");
+					header("Content-type: application/json");
+					echo json_encode(array("success"=>false));
+				}
+			} else {
+				header("HTTP/1.0 415 Unsupported Media Type");
+			}
+		} else {
+			header("HTTP/1.0 405 Method Not Allowed");
+			header("Allow: GET POST");
+		}
+	}
+	
+	private function getRestRequest(){
+		$relavantURI = str_replace($_SERVER['SCRIPT_NAME'],'',$_SERVER['REQUEST_URI']);
+		$relavantURI = trim($relavantURI,' /');
+		$requestData = explode('/',$relavantURI);
+		return $requestData;
 	}
 
 }
-
 
 /**
  * Allows automatic class loading by including {classname}.php
  * when a new class is encountered
  */
 function __autoload($class){
-	$filename = "$class.php";
-	if(file_exists($filename)){
-		include_once $filename;
-	} else {
-		throw new CartoPressException("Unable to load class: $class");
+	$filenames = array(
+		"$class.php",
+		"tcpdf/".strtolower($class).".php"
+		
+	);
+	foreach($filenames as $filename){
+		if(file_exists($filename)){
+			include_once $filename;
+			return;
+		}
 	}
-	
+	throw new CartoPressException("Unable to load class: $class");
 }
 class CartoPressException extends Exception {}
 
-
 new CartoPress();
+
+
+
 ?>

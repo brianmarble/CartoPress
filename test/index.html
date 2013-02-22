@@ -1,0 +1,139 @@
+<!doctype html>
+<title>CartoPress Test</title>
+<script src="http://openlayers.org/api/OpenLayers.js"></script>
+<style>
+	#map {
+		width: 800px;
+		height: 500px;
+		border: solid black 1px;
+		margin: auto;
+	}
+</style>
+<script src="../CartoPress.js"></script>
+<div id="map"></div>
+<script>
+	
+	
+	
+	
+	
+	
+	
+	var map, layer;
+	
+	var lat = 4099508.5373339, lon = -10429774.028535;
+
+	layer = new OpenLayers.Layer.WMS( "BaseLayer2",
+		"http://mt.10000maps.com/dev/ms", {map: 'landmaps/Base_Layers.map', layers: 'BaseLayers_SimpleBase2'} );
+
+	vlayer = new OpenLayers.Layer.Vector( "Editable" );
+	map = new OpenLayers.Map( 'map',{
+		projection: "EPSG:900913"
+	});
+	//map.addControl(new OpenLayers.Control.EditingToolbar(vlayer));
+	map.addLayers([layer, vlayer]);
+
+	map.setCenter(new OpenLayers.LonLat(lon,lat), 4);
+	
+	var point = new OpenLayers.Geometry.Point(lon,lat);
+	var p = OpenLayers.Geometry.Polygon.createRegularPolygon(point,1000000,4);
+	vlayer.addFeatures(new OpenLayers.Feature.Vector(p));
+	
+	
+	var cp = new CartoPress();
+	
+	
+	
+	
+	cp.getAvailableFormats(function(formats){
+		console.log(formats);
+		
+		var f = vlayer.features[0];
+		var b = f.geometry.getBounds();
+		cp.createPdf(map,b,formats[0].name,"new_"+(new Date().getTime()),function(data){
+			console.log(data);
+		});
+	})
+	
+	/*
+	
+	function getFeaturesThatInsersectBounds(layer,bounds){
+		var features = layer.features;
+		var intersectingFeatures = []
+		for(var i = 0; i < features.length; i++){
+			if(bounds.intersectsBounds(features[i].geometry.getBounds())){
+				intersectingFeatures.push(features[i]);
+			}
+		}
+		return intersectingFeatures;
+	}
+	
+	
+	function CartoPress(url){
+		this.url = url;
+		this.json = new OpenLayers.Format.JSON();
+		this.infoHandler = OpenLayers.Function.bind(this.infoHandler,this);
+		OpenLayers.Request.GET({
+			url:this.url+"?a=info",
+			callback: this.infoHandler
+		});
+	}
+	CartoPress.prototype.infoHandler = function(request){
+		if(request.status != 200){
+			throw "CartoPress failed to conect with CartoPress Server!\nConnection url: "+url;
+		}
+		try {
+			var info = this.json.read(request.responseText);
+		} catch(err){
+			if(err instanceof SyntaxError){
+				console.log("Failed to parse json");
+				console.log(request.responseText);
+				return;
+			} else {
+				throw err
+			}
+		}
+		console.log(info);
+		
+	}
+	CartoPress.prototype.getPDFUrl = function(map,bounds,callback){
+		var layers = map.getLayersBy('visibility',true);
+	}
+	
+	CartoPress.Communicator = function(url){
+		this.url = url;
+	}
+	
+	CartoPress.Communicator.prototype.GET
+	CartoPress.Communicator.prototype.PUT
+	CartoPress.Communicator.prototype.DELETE
+	
+	
+	new CartoPress("../CartoPress.php");
+	
+	
+	
+function getCookies(){
+	var c = document.cookie;
+	c = c.split(';');
+	console.log(c);
+	return c;
+}
+
+
+
+
+
+
+
+
+
+var cp = new CartoPress("../CartoPress.php",function(cp){
+	cp.formats
+	// [{name:"",ratio:""}]
+});
+cp.createPdf(olmap,olbounds,pdfId,function(success,pdfId){
+	location.assign(cp.getPdfURI(pdfId));
+});
+*/
+</script>
