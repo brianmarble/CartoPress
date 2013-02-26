@@ -50,8 +50,11 @@
 		
 		var f = vlayer.features[0];
 		var b = f.geometry.getBounds();
-		cp.createPdf(map,b,formats[0].name,"new_"+(new Date().getTime()),function(data){
-			console.log(data);
+		var name = "new_"+(new Date().getTime());
+		cp.createPdf(map,b,formats[0].name,name,function(url){
+			console.log(url);
+			window.pdfurl = url;
+			//location.assign(cp.url+'/pdfs/'+name+'.pdf');
 		});
 	})
 	

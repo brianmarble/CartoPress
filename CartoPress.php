@@ -28,33 +28,28 @@ class CartoPress {
 			$this->handlePdf($request);
 		} else {
 			if(false)header("HTTP/1.0 404 Not Found");
-			else var_dump($_SERVER,$request);
+			else {
+				header("Content-type: text/plain");
+				var_dump($_SERVER,$request);
+			}
 		}
 		die();
 		
 	}
 	
 	private function outputFormatList(){
-		$accept = $_SERVER['HTTP_ACCEPT'];
-		if(strstr($accept,'application/json') != -1 || strstr($accept,'application/*') != -1 || strstr($accept,'*/*') != -1){
-			$margins = self::$config->margin * 2;
-			
-			$data = array();
-			foreach(self::$config->pageSizes as $layout){
-				$size = MapPDF::getPageSizeFromFormat($layout->name);
-				var_dump($size[0]/72,$size[1]/72);
-				die();
-				$data[] = array(
-					'name' => $layout->name,
-					'ratio' => ($layout->width - $margins) / ($layout->height - $margins)
-				);
-			}
-			
-			header("Content-type: application/json");
-			echo json_encode($data);		
-		} else {
-			header("HTTP/1.0 406 Not Acceptable");
+		$cfg = self::$config;
+		$data = array();
+		foreach($cfg->pageLayouts as $displayName => $tcpdfName){
+			$layout = new PageLayout($displayName);
+			$data[] = array(
+				'name' => $layout->getDisplayName(),
+				'ratio' => $layout->getMapRatio()
+			);
 		}
+		
+		header("Content-type: application/json");
+		echo json_encode($data);
 		
 	}
 	
@@ -63,7 +58,7 @@ class CartoPress {
 		$filename = self::$config->pdfDir."/".$request[1];
 		if($method == 'GET'){
 			if(file_exists($filename)){
-				header("Content-type: application/x-pdf");
+				header("Content-type: application/pdf");
 				echo file_get_contents($filename);
 			} else {
 				header("HTTP/1.0 404 Not Found");
@@ -76,7 +71,7 @@ class CartoPress {
 				if($pdf && $pdf->saveTo($filename)){
 					header("HTTP/1.0 201 Created");
 					header("Content-type: application/json");
-					echo json_encode(array("id"=>$request[1]));
+					echo json_encode(array("url"=>$request[1]));
 				} else {
 					header("HTTP/1.0 200 Created");
 					header("Content-type: application/json");

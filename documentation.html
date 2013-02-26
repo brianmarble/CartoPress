@@ -1,0 +1,77 @@
+<!doctype html>
+
+<h1>CartoPress Documentation</h1>
+
+<h2>CartoPress Server API</h2>
+<h3> GET /layouts </h3>
+<p>Returns a list of available page layouts with their respective names and map ratios. The intent
+of this data is to provide the end user with a list of page sizes to choose from and allow the 
+site to display a print area box on the map of the correct ratio so the user knows what will be 
+included in the print.</p>
+<p>The data is a json array of format objects each object has the following properties:
+<dl>
+<dt>name</dt><dd>The name that should be displayed to the user</dd>
+<dt>ratio</dt><dd>The (portait) width to height ratio of the map on the printed page</dd>
+</dl>
+</p>
+
+<h3> POST /pdfs/{pdfid}.pdf </h3>
+<p> Request the creation of a new pdf file. The post body must contain a pdf specification object 
+in json format. See Structure of the PDF Specification object. The pdfid may only contain 
+alphanumeric characters and the underscore. Any other characters will cause the request to be 
+rejected.</p>
+<p>The response will be a json object with the following proerties:
+<dl>
+	<dt>success</dt><dd>Boolean - true if the pdf was created.</dd>
+	<dt>pdfid</dt><dd>the pdfid that was passed to cartopress</dd>
+	<dt>error</dt><dd>Possible Values: 1 - missing or bad specification, 2 - pdfid invalid, 3 - pdfid already in use.</dd>
+</dl>
+</p>
+<h3> GET /pdfs/{pdfid}.pdf </h3>
+<p>Returns the pdf specified by the pdfid or a 404 if the pdf does not exists.</p>
+<p>An optional "?download" can be added to the url to try to have the browser download the file 
+instead of display it</p>
+
+<h2>Structure of the PDF Specification object</h2>
+<dl>
+	<dt>projection</dt><dd>{string} the projection used for the map</dd>
+	<dt>layout</dt><dd>{string} name of the layout</dd>
+	<dt>bounds</dt><dd>{bounds}</dd>
+	<dt>layers</dt><dd>[{layer}]</dd>
+</dl>
+<h3>{bounds}</h3>
+<dl>
+	<dt>left</dt><dd>{number}</dd>
+	<dt>bottom</dt><dd>{number}</dd>
+	<dt>right</dt><dd>{number}</dd>
+	<dt>top</dt><dd>{number}</dd>
+</dl>
+<h3>{layer}</h3>
+<dl>
+	<dt>name</dt><dd>{string}</dd>
+	<dt>type</dt><dd>{string} wms | vector</dd>
+	<dt>url</dt><dd>{string} wms layers only</dd>
+	<dt>paramaters</dt><dd>{object} url paramaters to add to each image request</dd>
+	<dt>data</dt><dd> ??? </dd>
+</dl>
+<h2>CartoPress Client API<h2>
+<h3>CartoPress Constructor<h3>
+<h4>Paramaters</h4>
+<dl>
+	<dt>url</dt><dd>{string}</dd>
+</dl>
+<h3>CartoPress.getLayouts</h3>
+<h4>Paramaters</h4>
+<dl>
+	<dt>callback</dt><dd>{function}</dd>
+</dl>
+<h3>CartoPress.createPdf</h3>
+<h4>Paramaters</h4>
+<dl>
+	<dt>callback</dt><dd>{function}</dd>
+</dl>
+<h3>CartoPress.downloadPdf</h3>
+<h4>Paramaters</h4>
+<dl>
+	<dt>pdfid</dt><dd>{string}</dd>
+</dl>

@@ -51,7 +51,7 @@ CartoPress.prototype.createPdf = function(map,bounds,format,id,callback){
 	var data = {
 		bounds: bounds,
 		projection: map.getProjection(),
-		pageSize: typeof format == "string" ? format : format.name,
+		layout: typeof format == "string" ? format : format.name,
 		layers: []
 	}
 	var layers = map.getLayersBy('visibility',true);
@@ -68,12 +68,35 @@ CartoPress.prototype.createPdf = function(map,bounds,format,id,callback){
 	}
 	
 	var request =  new this.request();
-	request.open('POST',this.url+'/pdfs/'+id);
+	request.open('POST',this.url+'/pdfs/'+id+'.pdf');
 	request._cp_callback = callback;
 	request.setRequestHeader('Content-type','application/json');
 	request.setRequestHeader('Accept','application/json');
-	request.onreadystatechange = this.handleResponse.bind(this);
+	request.onreadystatechange = this.handleCreatePdfResponse.bind(this);
 	request.send(this.json.write(data));
+}
+
+CartoPress.prototype.handleCreatePdfResponse = function(event){
+	var request = event.target;
+	if(request.readyState == 4){
+		try {
+			var data = this.json.read(request.responseText);
+			if(request._cp_callback instanceof Function){
+				if(request.status == 201){
+					request._cp_callback(this.url+"/pdfs/"+data.url);
+				}
+				
+			}
+		} catch(e){
+			if(e instanceof SyntaxError){
+				console.log('CartoPress Error: Server Response isn\'t json!');
+				console.log(request.responseText);
+				return;
+			} else {
+				throw e;
+			}
+		}
+	}
 }
 
 CartoPress.prototype.toRatio = function(bounds,ratio,shrink){
@@ -113,7 +136,7 @@ CartoPress.prototype.getVectorSpec = function(layer){
 	console.log(layer);
 	return {
 		name: layer.name,
-		type: 'wms',
+		type: 'vector',
 		features: gj.write(layer.features)
 	}
 }

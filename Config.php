@@ -10,7 +10,7 @@ class Config {
 	const COMMENT_REGEX = '~#[\\s\\S]*$~';
 	const SECTION_REGEX = '~[[]([a-zA-Z0-9_]+)[]]~';
 	const KEY_VALUE_REGEX = '~^([^=]+)=([^=]*)$~';
-	const LAYOUT_REGEX = '~(.*)(?:\\t|  )\s*(\d+)\s+(\d+)~';
+	const LAYOUT_REGEX = '~([^\\t]*)(?:\\t)\s*([^\s]+)~';
 	const DEFAULT_FILENAME = "Config.cfg";
 	
 	/**
@@ -61,14 +61,10 @@ class Config {
 	}
 	
 	private function extract_pageSizes($lines){
-		$this->pageSizes = array();
+		$this->pageLayouts = array();
 		foreach($lines as $line){
 			preg_match(self::LAYOUT_REGEX,$line,$matches);
-			$pageSize = new stdClass();
-			$pageSize->name = trim($matches[1]);
-			$pageSize->width = $matches[2]+0;
-			$pageSize->height = $matches[3]+0;
-			$this->pageSizes[] = $pageSize;
+			$this->pageLayouts[trim($matches[1])] = trim($matches[2]);
 		}
 	}
 }

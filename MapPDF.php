@@ -3,8 +3,8 @@
 
 class MapPDF extends TCPDF {
 
-	public function __construct(){
-		
+	public function __construct($orientation, $unit, $layout){
+		parent::__construct($orientation, $unit, $layout);
 	}
 	
 	public function Header(){
@@ -17,6 +17,10 @@ class MapPDF extends TCPDF {
 	
 	public function drawMapLayer(Layer $layer){
 		$layer->draw($this);
+	}
+	
+	public static function getPageSize($format){
+		return @parent::getPageSizeFromFormat($format);
 	}
 	
 	/**

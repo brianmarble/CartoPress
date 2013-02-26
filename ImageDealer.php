@@ -17,10 +17,11 @@ class ImageDealer {
 	private static $counter = 1;
 	private $unique;
 	
-	public function __construct($url,$dir){
+	public function __construct($url,$commonParams){
 		$this->url = $url;
-		$this->dir = $dir;
+		$this->dir = CartoPress::$config->imgDir;
 		$this->requests = array();
+		$this->commonParams = $commonParams;
 		$this->unique = microtime(true) . '_'  . getmypid();
 	}
 	
@@ -49,6 +50,9 @@ class ImageDealer {
 	
 	private function getQueryString($params){
 		$flatParams = array();
+		foreach($this->commonParams as $key => $value){
+			$flatParams[] = "$key=$value";
+		}
 		foreach($params as $key => $value){
 			$flatParams[] = "$key=$value";
 		}
