@@ -14,7 +14,7 @@ class ImageDealer {
 	private $requests;
 	private $filenames;
 	
-	private static $counter = 1;
+	private $counter = 1;
 	private $unique;
 	
 	public function __construct($url,$commonParams){
@@ -22,30 +22,31 @@ class ImageDealer {
 		$this->dir = CartoPress::$config->imgDir;
 		$this->requests = array();
 		$this->commonParams = $commonParams;
-		$this->unique = microtime(true) . '_'  . getmypid();
+		$this->unique = rand(0,999999);
+		
+		$cfg = CartoPress::$config; 
+		$dir = $cfg->imgDir;
+		if(!is_dir($dir))mkdir($dir,0777,true);
 	}
 	
 	public function addImage($params){
 		$url = $this->url . $this->getQueryString($params);
 		$request = new Curl($url);
-		$this->requests[] = $request;
+		$filename = $this->getFilename();
+		$this->requests[$filename] = $request;
+		return $filename;
 	}
 	
 	public function getImages(){
 		$masterRequest = new CurlParallel();
-		foreach($this->requests as $request){
+		foreach($this->requests as $filename => $request){
 			$masterRequest->add($request);
 		}
 		$masterRequest->exec();
-		foreach($this->requests as $request){
-			var_dump( $this);
-			var_dump($_SERVER);
-			var_dump($request);
-			var_dump($request->info());
-			var_dump($request->fetch());
-			//file_put_contents($filename,$imageData);
+		foreach($this->requests as $filename => $request){
+			$imageData = $request->fetch();
+			file_put_contents($filename,$imageData);
 		}
-		//return array_keys($this->requests);
 	}
 	
 	private function getQueryString($params){
@@ -60,8 +61,8 @@ class ImageDealer {
 	}
 	
 	private function getFilename(){
-		$time = microtime(true);
-		var_dump($time);
+		$cfg = CartoPress::$config; 
+		return $cfg->imgDir . '/' . $this->unique . '_' . $this->counter++ . '.png';
 	}
 }
 
