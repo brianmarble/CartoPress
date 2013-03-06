@@ -95,28 +95,18 @@ CartoPress.prototype = {
 		}
 	},
 
-	toRatio: function(bounds,ratio,shrink){
-		var w = bounds.getWidth();
-		var h = bounds.getHeight();
-		var landscape = w > h;
-		var longSide = landscape ? w : h;
-		var shortSide = landscape ? h : w;
-		var targetShortSide = longSide * ratio;
-		var targetLongSide = shortSide * (1/ratio);
-		var editLong = longSide < targetLongSide;
-		if(shrink)editLong != editLong;
-		var extension = editLong ? (targetLongSide - longSide) / 2 : (targetShortSide - shortSide) / 2
-		var bArray = bounds.toArray();
-		if(editLong && landscape){
-			bArray[0] -= extension;
-			bArray[2] += extension;
-		} else {
-			bArray[1] -= extension;
-			bArray[3] += extension;
-		}
+	toRatio: function(bounds,ratio){
+		var size = bounds.getSize(),
+			heightDifference = size.w / ratio - size.h,
+			widthDifference = ratio / size.h - size.w,
+			adjustHeight = heightDifference > 0,
+			extendSize = (adjustHeight ? heightDifference : widthDifference)/2,
+			extendSides = adjustHeight ? [3,1] : [2,0],
+			bArray = bounds.toArray();
+		bArray[extendSides[0]] += extendSize;
+		bArray[extendSides[1]] -= extendSize;
 		return OpenLayers.Bounds.fromArray(bArray);
 	},
-
 
 	getWmsSpec: function(layer){
 		return {
