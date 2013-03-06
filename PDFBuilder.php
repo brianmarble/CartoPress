@@ -5,6 +5,9 @@ class PDFBuilder {
 	private $pdf;
 	
 	public function __construct($spec){
+		
+		$this->validatePdfSpecs($spec);
+		
 		$pageLayout = new PageLayout($spec->layout);
 		$bounds = $spec->bounds;
 		$landscape = ($bounds->top - $bounds->bottom) < ($bounds->right - $bounds->left);
@@ -40,6 +43,21 @@ class PDFBuilder {
 		} else {
 			throw new CartoPressException("Layer type not found: $layer->type");
 		}
+	}
+	
+	private function validatePdfSpecs($spec){
+		$pageLayout = new PageLayout($spec->layout);
+		$layoutRatio = $pageLayout->getMapRatio();
+		$bounds = $spec->bounds;
+		$specWidth = $bounds->right - $bounds->left;
+		$specHeight = $bounds->top - $bounds->bottom; 
+		$specRatio = $specWidth / $specHeight;
+		//var_dump(abs($specRatio - $layoutRatio));
+		if(abs($specRatio - $layoutRatio) > .00001){
+			var_dump($bounds,$specWidth,$specHeight,$specRatio,$layoutRatio);
+			throw new CartoPressException("Invalid Bounds given in spec");
+		}
+		
 	}
 }
 
