@@ -195,6 +195,19 @@ class MapPDF extends TCPDF {
 		return $oid;
 	}	
 
+	public function objclone($object) {
+		/**
+		 * The clone keyword this throws a fatal error
+		 * on our system when trying to clone an Imagick object. I don't know why. 
+		 * Using the depricated clone method of the Imagick class solves the problem. I don't like
+		 * it because it is deprecated, but it works.
+		 */
+		if($object instanceof Imagick){
+			return $object->clone();
+		} else {
+			return @clone($object);
+		}
+	}
 }
 
 ?>
