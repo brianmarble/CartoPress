@@ -18,13 +18,15 @@ class ImageDealer {
 	private $unique;
 	
 	public function __construct($url,$commonParams){
+		
+		$cfg = Config::getInstance(); 
+		
 		$this->url = $url;
-		$this->dir = CartoPress::$config->imgDir;
+		$this->dir = $cfg->imgDir;
 		$this->requests = array();
 		$this->commonParams = $commonParams;
 		$this->unique = rand(0,999999);
 		
-		$cfg = CartoPress::$config; 
 		$dir = $cfg->imgDir;
 		if(!is_dir($dir))mkdir($dir,0777,true);
 	}
@@ -61,7 +63,7 @@ class ImageDealer {
 	}
 	
 	private function getFilename(){
-		$cfg = CartoPress::$config; 
+		$cfg = Config::getInstance(); 
 		return $cfg->imgDir . '/' . $this->unique . '_' . $this->counter++ . '.png';
 	}
 }

@@ -11,15 +11,18 @@ class Config {
 	const SECTION_REGEX = '~[[]([a-zA-Z0-9_]+)[]]~';
 	const KEY_VALUE_REGEX = '~^([^=]+)=([^=]*)$~';
 	const LAYOUT_REGEX = '~([^\\t]*)(?:\\t)\s*([^\s]+)~';
-	const DEFAULT_FILENAME = "Config.cfg";
+	const CONFIG_FILENAME = "Config.cfg";
+	private static $instance;
+
+	public static function getInstance(){
+		if(!isset(Config::$instance)){
+			Config::$instance = new Config();
+		}
+		return Config::$instance;
+	}
 	
-	/**
-	 * @param filename Name of the configuration file to open. If no 
-	 * filename is provided the default file "Config.cfg" will be used.
-	 */
-	public function __construct($filename=null){
-		if(!$filename)$filename = self::DEFAULT_FILENAME;
-		$configFileLines = explode("\n",file_get_contents("Config.cfg"));
+	private function __construct(){
+		$configFileLines = explode("\n",file_get_contents(self::CONFIG_FILENAME));
 		$currentSection = 'initial';
 		foreach($configFileLines as $line){
 			$strippedLine = trim(preg_replace(self::COMMENT_REGEX,'',$line));

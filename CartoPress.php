@@ -12,11 +12,7 @@ ini_set("html_errors",false);
  */
 class CartoPress {
 	
-	public static $config;
-	
 	public function __construct(){
-
-		self::$config = new Config();
 
 		$request = $this->getRestRequest();
 
@@ -38,7 +34,7 @@ class CartoPress {
 	}
 	
 	private function outputFormatList(){
-		$cfg = self::$config;
+		$cfg = Config::getInstance();
 		$data = array();
 		foreach($cfg->pageLayouts as $displayName => $tcpdfName){
 			$layout = new PageLayout($displayName);
@@ -55,7 +51,7 @@ class CartoPress {
 	
 	private function handlePdf($request){
 		$method = $_SERVER['REQUEST_METHOD'];
-		$filename = self::$config->pdfDir."/".$request[1];
+		$filename = Config::getInstance()->pdfDir."/".$request[1];
 		if($method == 'GET'){
 			if(file_exists($filename)){
 				header("Content-type: application/pdf");

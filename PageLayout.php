@@ -12,7 +12,7 @@ class PageLayout {
 	private $dpi;
 
 	public function __construct($displayName){
-		$cfg = CartoPress::$config;
+		$cfg = Config::getInstance();
 		$this->displayName = $displayName;
 		$this->tcpdfName = $cfg->pageLayouts[$displayName];
 		$pageSizeInPoints = MapPDF::getPageSize($this->tcpdfName);
