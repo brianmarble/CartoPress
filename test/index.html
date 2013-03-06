@@ -24,15 +24,19 @@
 	var lat = 4099508.5373339, lon = -10429774.028535;
 
 	layer = new OpenLayers.Layer.WMS( "BaseLayer2",
-		"http://mt.10000maps.com/dev/ms", {map: 'landmaps/Base_Layers.map', layers: 'BaseLayers_SimpleBase2'} );
-
+		"http://mt.10000maps.com/dev/ms", {map: 'landmaps/Base_Layers.map', layers: 'BaseLayers_SimpleBase2', transparent: 'true'} );
+	
+	layer2 = new OpenLayers.Layer.WMS( "Layer2",
+		"http://mt.10000maps.com/dev/ms", {map: 'landmaps/Worldwide_Land.map', layers: 'World_Forestland', transparent: 'true'} );
+		
 	vlayer = new OpenLayers.Layer.Vector( "Editable" );
 	map = new OpenLayers.Map( 'map',{
 		projection: "EPSG:900913"
 	});
 	//map.addControl(new OpenLayers.Control.EditingToolbar(vlayer));
-	map.addLayers([layer, vlayer]);
-
+	
+	map.addLayers([layer, layer2, vlayer]);
+	map.setBaseLayer(layer);
 	map.setCenter(new OpenLayers.LonLat(lon,lat), 4);
 	
 	var point = new OpenLayers.Geometry.Point(lon,lat);
@@ -51,7 +55,7 @@
 		var f = vlayer.features[0];
 		var b = f.geometry.getBounds();
 		var name = "new_"+(new Date().getTime());
-		cp.createPdf(map,b,formats[0].name,name,function(url){
+		cp.createPdf(map,b,formats[0],name,function(url){
 			console.log(url);
 			window.pdfurl = url;
 			//location.assign(cp.url+'/pdfs/'+name+'.pdf');
