@@ -5,10 +5,10 @@ ini_set("html_errors",false);
  * Main class, is created on every request and handles input and output
  * processing.
  * 
- * GET  http:// ... /                 retrieve information about this instance of cartopress
- * GET  http:// ... /formats          list of formats
- * POST http:// ... /pdfs/{id}        create a pdf with the given id
- * GET  http:// ... /pdfs/{id}        retrieve the pdf with the given id
+ * GET  /                 retrieve information about this instance of cartopress
+ * GET  /formats          list of formats
+ * POST /pdfs/{id}        create a pdf with the given id
+ * GET  /pdfs/{id}        retrieve the pdf with the given id
  */
 class CartoPress {
 	
