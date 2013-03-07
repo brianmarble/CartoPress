@@ -12,6 +12,32 @@ CartoPress.serverUrl = (function(){
 	var scriptEl = document.body ? document.body.lastChild : document.head.lastChild;
 	return scriptEl.src.replace(/js/,'php');
 }());
+CartoPress.util = {
+	toRatio: function(bounds,ratio){
+		var size = bounds.getSize(),
+			heightDifference = size.w / ratio - size.h,
+			widthDifference = ratio / size.h - size.w,
+			adjustHeight = heightDifference > 0,
+			extendSize = (adjustHeight ? heightDifference : widthDifference)/2,
+			extendSides = adjustHeight ? [3,1] : [2,0],
+			bArray = bounds.toArray();
+		bArray[extendSides[0]] += extendSize;
+		bArray[extendSides[1]] -= extendSize;
+		var newBounds = OpenLayers.Bounds.fromArray(bArray);
+		if(Number.isNaN(extendSize)){
+			console.log('ratio', ratio);
+			console.log('heightDifference', heightDifference);
+			console.log('widthDifference', widthDifference);
+			console.log('adjustHeight', adjustHeight);
+			console.log('extendSize', extendSize);
+			console.log('extendSides', extendSides);
+			
+			console.log(bounds,extendSize,adjustHeight,newBounds);
+			throw 'ouch!';
+		}
+		return newBounds;
+	},
+}
 CartoPress.prototype = {
 	getAvailableFormats: function(callback){
 		var request =  new this.request();
@@ -43,7 +69,6 @@ CartoPress.prototype = {
 	},
 
 	createPdf: function(map,bounds,format,id,callback){
-		var bounds = this.toRatio(bounds,format.ratio);
 		var data = {
 			bounds: bounds,
 			projection: map.getProjection(),
@@ -95,19 +120,6 @@ CartoPress.prototype = {
 		}
 	},
 
-	toRatio: function(bounds,ratio){
-		var size = bounds.getSize(),
-			heightDifference = size.w / ratio - size.h,
-			widthDifference = ratio / size.h - size.w,
-			adjustHeight = heightDifference > 0,
-			extendSize = (adjustHeight ? heightDifference : widthDifference)/2,
-			extendSides = adjustHeight ? [3,1] : [2,0],
-			bArray = bounds.toArray();
-		bArray[extendSides[0]] += extendSize;
-		bArray[extendSides[1]] -= extendSize;
-		return OpenLayers.Bounds.fromArray(bArray);
-	},
-
 	getWmsSpec: function(layer){
 		return {
 			name: layer.name,
@@ -119,11 +131,68 @@ CartoPress.prototype = {
 
 	getVectorSpec: function(layer){
 		var gj = new OpenLayers.Format.GeoJSON();
-		console.log(layer);
+		//console.log(layer);
 		return {
 			name: layer.name,
-			type: 'vector',
-			features: gj.write(layer.features)
+			type: 'vector'//,
+			//features: gj.write(layer.features)
 		}
 	}
 }
+
+CartoPress.SelectPrintArea = OpenLayers.Class(OpenLayers.Control.ModifyFeature, {
+
+	printAreaRatio: 1,
+
+	initialize: function() {
+		OpenLayers.Control.ModifyFeature.prototype.initialize.call(this, 
+			new OpenLayers.Layer.Vector('selectPrintArea'), 
+			{
+				mode: OpenLayers.Control.ModifyFeature.RESIZE | OpenLayers.Control.ModifyFeature.DRAG
+			}
+		);
+		this.events.on({
+			"activate": this._activate,
+			"deactivate": this._deactivate,
+			scope: this
+		});
+		
+	},
+	
+	_activate: function(){
+		this.layer.removeAllFeatures();
+		this.map.addLayer(this.layer);
+		
+		var mapArea = this.map.getExtent();
+		var printArea = CartoPress.util.toRatio(mapArea,this.printAreaRatio);
+		
+		var widthDiff = mapArea.getWidth() / printArea.getWidth();
+		var heightDiff = mapArea.getHeight() / printArea.getHeight();
+		
+		printArea = printArea.scale(Math.min(widthDiff,heightDiff) * .75);
+		
+		
+		this.layer.addFeatures(new OpenLayers.Feature.Vector(printArea.toGeometry()));
+	},
+	
+	_deactivate: function(){
+		this.map.removeLayer(this.layer);
+	},
+	
+	setRatio: function(ratio){
+		this.printAreaRatio = ratio;
+		if(this.active){
+			this.deactivate();
+			this.activate();
+		}
+	},
+	
+	getBounds: function(){
+		return this.layer.features[0].geometry.getBounds();
+	},
+	
+	CLASS_NAME: "CartoPress.SelectPrintArea"
+});
+
+
+

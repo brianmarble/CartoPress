@@ -8,50 +8,110 @@
 		border: solid black 1px;
 		margin: auto;
 	}
+	#options {
+		float: right;
+	}
 </style>
 <script src="../CartoPress.js"></script>
+<div id="options">
+	<div>Choose Page Layout: <select id="layouts"></select></div>
+	<div><input id="printButton" type="button" value="print"/></div>
+</div>
 <div id="map"></div>
 <script>
 	
 	
+	function BaseLayer(){
+		return new OpenLayers.Layer.WMS(
+			"BaseLayer",
+			"http://mt.10000maps.com/dev/ms", 
+			{
+				map: 'landmaps/Base_Layers.map', 
+				layers: 'BaseLayers_SimpleBase2'
+			}
+		);
+	}
 	
+	function ForestLayer(){
+		return new OpenLayers.Layer.WMS(
+			"Layer2",
+			"http://mt.10000maps.com/dev/ms",
+			{
+				map: 'landmaps/Worldwide_Land.map',
+				layers: 'World_Forestland',
+				transparent: 'true'
+			}
+		);
+	}
 	
-	
-	
-	
-	var map, layer;
-	
-	var lat = 4099508.5373339, lon = -10429774.028535;
-
-	layer = new OpenLayers.Layer.WMS( "BaseLayer2",
-		"http://mt.10000maps.com/dev/ms", {map: 'landmaps/Base_Layers.map', layers: 'BaseLayers_SimpleBase2', transparent: 'true'} );
-	
-	layer2 = new OpenLayers.Layer.WMS( "Layer2",
-		"http://mt.10000maps.com/dev/ms", {map: 'landmaps/Worldwide_Land.map', layers: 'World_Forestland', transparent: 'true'} );
+	function Map(mapDivId){
+		var lat = 4099508.5373339, lon = -10429774.028535;
+		var baseLayer = new BaseLayer();
+		var forestLayer = new ForestLayer();
+		var map = new OpenLayers.Map(
+			mapDivId,
+			{
+				projection: "EPSG:900913"
+			}
+		);
+		map.addLayers([baseLayer, forestLayer]);
+		map.setBaseLayer(baseLayer);
+		map.setCenter(new OpenLayers.LonLat(lon,lat), 4);
 		
-	vlayer = new OpenLayers.Layer.Vector( "Editable" );
-	map = new OpenLayers.Map( 'map',{
-		projection: "EPSG:900913"
-	});
-	//map.addControl(new OpenLayers.Control.EditingToolbar(vlayer));
+		return map;
+	}
+
+	var map = new Map('map');
+	/*var spa = new OpenLayers.Control.ModifyFeature(
+		map.spa,
+		{
+			mode:	OpenLayers.Control.ModifyFeature.RESIZE |
+					OpenLayers.Control.ModifyFeature.DRAG
+		}
+	);
 	
-	map.addLayers([layer, layer2, vlayer]);
-	map.setBaseLayer(layer);
-	map.setCenter(new OpenLayers.LonLat(lon,lat), 4);
+	*/
+	var c = new CartoPress.SelectPrintArea();
+	map.addControl(c);
+	c.activate();
+	/*
+	var spa = new CartoPress.SelectPrintArea();
+	map.addControl(spa);
+	spa.activate();
+	*/
+	/*var c = new OpenLayers.Control.DrawFeature(
+		map.vectorLayer, 
+		OpenLayers.Handler.RegularPolygon, 
+		{
+			displayClass: 'olControlDrawFeaturePolygon',
+			handlerOptions: {
+				citeCompliant: false,
+				sides: 4,
+				snapAngle: 45
+			}
+		}
+	);
 	
-	var point = new OpenLayers.Geometry.Point(lon,lat);
-	var p = OpenLayers.Geometry.Polygon.createRegularPolygon(point,1000000,4);
-	vlayer.addFeatures(new OpenLayers.Feature.Vector(p));
+	map.addControl(c);
+	c.activate();*/
+	
+
 	
 	
 	var cp = new CartoPress();
 	
-	
-	
-	
 	cp.getAvailableFormats(function(formats){
-		console.log(formats);
-		
+		var selectLayoutDiv = document.getElementById('layouts'),
+			optionEl;
+		for(var i = 0; i < formats.length; i++){
+			optionEl = document.createElement('option');
+			optionEl.textContent = formats[i].name;
+			optionEl.value = formats[i].name;
+			optionEl.dataset.ratio = formats[i].ratio;
+			selectLayoutDiv.appendChild(optionEl);
+		}
+		c.setRatio(formats[0].ratio);
+		return;
 		var f = vlayer.features[0];
 		var b = f.geometry.getBounds();
 		var name = "new_"+(new Date().getTime());
@@ -62,85 +122,21 @@
 		});
 	})
 	
-	/*
+	document.getElementById('layouts').addEventListener('change',function(){
+		var val = document.getElementById('layouts').selectedOptions[0].dataset.ratio;
+		c.setRatio(+val);
+	});
+	document.getElementById('printButton').addEventListener('click',print);
 	
-	function getFeaturesThatInsersectBounds(layer,bounds){
-		var features = layer.features;
-		var intersectingFeatures = []
-		for(var i = 0; i < features.length; i++){
-			if(bounds.intersectsBounds(features[i].geometry.getBounds())){
-				intersectingFeatures.push(features[i]);
-			}
-		}
-		return intersectingFeatures;
-	}
-	
-	
-	function CartoPress(url){
-		this.url = url;
-		this.json = new OpenLayers.Format.JSON();
-		this.infoHandler = OpenLayers.Function.bind(this.infoHandler,this);
-		OpenLayers.Request.GET({
-			url:this.url+"?a=info",
-			callback: this.infoHandler
+	function print(){
+		var b = c.getBounds();
+		var layout = document.getElementById('layouts').value;
+		var name = "new_"+(new Date().getTime());
+		cp.createPdf(map,b,layout,name,function(url){
+			console.log(url);
+			//window.pdfurl = url;
+			location.assign(cp.url+'/pdfs/'+name+'.pdf');
 		});
 	}
-	CartoPress.prototype.infoHandler = function(request){
-		if(request.status != 200){
-			throw "CartoPress failed to conect with CartoPress Server!\nConnection url: "+url;
-		}
-		try {
-			var info = this.json.read(request.responseText);
-		} catch(err){
-			if(err instanceof SyntaxError){
-				console.log("Failed to parse json");
-				console.log(request.responseText);
-				return;
-			} else {
-				throw err
-			}
-		}
-		console.log(info);
-		
-	}
-	CartoPress.prototype.getPDFUrl = function(map,bounds,callback){
-		var layers = map.getLayersBy('visibility',true);
-	}
-	
-	CartoPress.Communicator = function(url){
-		this.url = url;
-	}
-	
-	CartoPress.Communicator.prototype.GET
-	CartoPress.Communicator.prototype.PUT
-	CartoPress.Communicator.prototype.DELETE
-	
-	
-	new CartoPress("../CartoPress.php");
-	
-	
-	
-function getCookies(){
-	var c = document.cookie;
-	c = c.split(';');
-	console.log(c);
-	return c;
-}
 
-
-
-
-
-
-
-
-
-var cp = new CartoPress("../CartoPress.php",function(cp){
-	cp.formats
-	// [{name:"",ratio:""}]
-});
-cp.createPdf(olmap,olbounds,pdfId,function(success,pdfId){
-	location.assign(cp.getPdfURI(pdfId));
-});
-*/
 </script>
