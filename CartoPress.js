@@ -1,12 +1,15 @@
 'use strict';
 
-var CartoPress = function(url){
+var CartoPress = function(map,url){
 	this.url = url || CartoPress.serverUrl;
 	this.request = OpenLayers.Request.XMLHttpRequest;
 	this.json = new OpenLayers.Format.JSON();
 	if(!this.request){
 		throw "CartoPress Error: Unable to create XMLHttpRequest object!"
 	}
+	this.selectPrintAreaControl = new CartoPress.SelectPrintAreaControl();
+	map.addControl(this.selectPrintAreaControl);
+	this.sendAjaxForPageLayouts();
 }
 CartoPress.serverUrl = (function(){
 	var scriptEl = document.body ? document.body.lastChild : document.head.lastChild;
@@ -39,23 +42,32 @@ CartoPress.util = {
 	},
 }
 CartoPress.prototype = {
-	getAvailableFormats: function(callback){
+	
+	sendAjaxForPageLayouts: function(){
 		var request =  new this.request();
 		request.open('GET',this.url+'/formats');
-		request._cp_callback = callback;
 		request.setRequestHeader('Accept','application/json');
-		request.onreadystatechange = this.handleResponse.bind(this);
+		request.onreadystatechange = this.recieveLayouts.bind(this);
 		request.send();
 	},
+	
+	getPageLayouts: function(callback){
+		if(this.pageLayouts){
+			var returnArray = [];
+			for(var i = 0; i < this.pageLayouts.length; i++){
+				returnArray.push(this.pageLayouts[i].name);
+			}
+			callback(returnArray);
+		} else {
+			this.pageLayoutsCallback = callback;
+		}
+	},
 
-	handleResponse: function(event){
+	recieveLayouts: function(event){
 		var request = event.target;
 		if(request.readyState == 4){
 			try {
-				var data = this.json.read(request.responseText);
-				if(request._cp_callback instanceof Function){
-					request._cp_callback(data);
-				}
+				this.pageLayouts = this.json.read(request.responseText);
 			} catch(e){
 				if(e instanceof SyntaxError){
 					console.log('CartoPress Error: Server Response isn\'t json!');
@@ -64,6 +76,9 @@ CartoPress.prototype = {
 				} else {
 					throw e;
 				}
+			}
+			if(this.pageLayoutsCallback instanceof Function){
+				this.getPageLayouts(this.pageLayoutsCallback);
 			}
 		}
 	},
@@ -137,10 +152,39 @@ CartoPress.prototype = {
 			type: 'vector'//,
 			//features: gj.write(layer.features)
 		}
+	},
+	
+	setPageLayout: function(layout){
+		for(var i = 0; i < this.pageLayouts.length; i++){
+			if(this.pageLayouts[i].name === layout){
+				this.currentLayout = layout;
+				this.selectPrintAreaControl.setRatio(
+					+this.pageLayouts[i].ratio
+				);
+				return;
+			}
+		}
+		throw "Layout "+layout+" not found!";
+	},
+	
+	activate: function(){
+		this.selectPrintAreaControl.activate();
+	},
+	
+	deactivate: function(){
+		this.selectPrintAreaControl.deactivate();
+	},
+	
+	print: function(callback){
+		var bounds = this.selectPrintAreaControl.getBounds();
+		this.selectPrintAreaControl.deactivate();
+		var name = "CartoPress_"+(new Date().getTime());
+		var map = this.selectPrintAreaControl.map;
+		cp.createPdf(map,bounds,this.currentLayout,name,callback);
 	}
 }
 
-CartoPress.SelectPrintArea = OpenLayers.Class(OpenLayers.Control.ModifyFeature, {
+CartoPress.SelectPrintAreaControl = OpenLayers.Class(OpenLayers.Control.ModifyFeature, {
 
 	printAreaRatio: 1,
 

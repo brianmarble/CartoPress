@@ -62,86 +62,36 @@
 	}
 
 	var map = new Map('map');
-	/*var spa = new OpenLayers.Control.ModifyFeature(
-		map.spa,
-		{
-			mode:	OpenLayers.Control.ModifyFeature.RESIZE |
-					OpenLayers.Control.ModifyFeature.DRAG
-		}
-	);
 	
-	*/
-	var c = new CartoPress.SelectPrintArea();
-	map.addControl(c);
-	c.activate();
-	/*
-	var spa = new CartoPress.SelectPrintArea();
-	map.addControl(spa);
-	spa.activate();
-	*/
-	/*var c = new OpenLayers.Control.DrawFeature(
-		map.vectorLayer, 
-		OpenLayers.Handler.RegularPolygon, 
-		{
-			displayClass: 'olControlDrawFeaturePolygon',
-			handlerOptions: {
-				citeCompliant: false,
-				sides: 4,
-				snapAngle: 45
-			}
-		}
-	);
+	var cp = new CartoPress(map);
 	
-	map.addControl(c);
-	c.activate();*/
-	
-
-	
-	
-	var cp = new CartoPress();
-	
-	cp.getAvailableFormats(function(formats){
+	cp.getPageLayouts(function(formats){
 		var selectLayoutDiv = document.getElementById('layouts'),
 			optionEl;
 		for(var i = 0; i < formats.length; i++){
 			optionEl = document.createElement('option');
-			optionEl.textContent = formats[i].name;
-			optionEl.value = formats[i].name;
-			optionEl.dataset.ratio = formats[i].ratio;
+			optionEl.textContent = formats[i];
+			optionEl.value = formats[i];
 			selectLayoutDiv.appendChild(optionEl);
 		}
-		c.setRatio(formats[0].ratio);
-		return;
-		var f = vlayer.features[0];
-		var b = f.geometry.getBounds();
-		var name = "new_"+(new Date().getTime());
-		cp.createPdf(map,b,formats[0],name,function(url){
-			console.log(url);
-			window.pdfurl = url;
-			//location.assign(cp.url+'/pdfs/'+name+'.pdf');
-		});
+		cp.setPageLayout(formats[0]);
+		cp.activate();
 	})
 	
 	document.getElementById('layouts').addEventListener('change',function(){
-		var val = document.getElementById('layouts').selectedOptions[0].dataset.ratio;
-		c.setRatio(+val);
+		var val = document.getElementById('layouts').value;
+		cp.setPageLayout(val);
 	});
 	document.getElementById('printButton').addEventListener('click',print);
 	
 	function print(){
-		var b = c.getBounds();
-		var layout = document.getElementById('layouts').value;
-		var name = "new_"+(new Date().getTime());
-		cp.createPdf(map,b,layout,name,function(url){
-			console.log(url);
-			//window.pdfurl = url;
-			location.assign(cp.url+'/pdfs/'+name+'.pdf');
+		cp.print(function(url){
+			location.assign(url);
 		});
 		var button = document.getElementById('printButton');
 		var p = button.parentElement;
 		p.removeChild(button);
 		p.appendChild(document.createTextNode('Working . . .'));
-		
 		
 	}
 
