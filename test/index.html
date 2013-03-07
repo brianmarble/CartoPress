@@ -137,6 +137,12 @@
 			//window.pdfurl = url;
 			location.assign(cp.url+'/pdfs/'+name+'.pdf');
 		});
+		var button = document.getElementById('printButton');
+		var p = button.parentElement;
+		p.removeChild(button);
+		p.appendChild(document.createTextNode('Working . . .'));
+		
+		
 	}
 
 </script>
