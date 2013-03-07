@@ -214,9 +214,9 @@ CartoPress.SelectPrintAreaControl = OpenLayers.Class(OpenLayers.Control.ModifyFe
 		var heightDiff = mapArea.getHeight() / printArea.getHeight();
 		
 		printArea = printArea.scale(Math.min(widthDiff,heightDiff) * .75);
-		
-		
-		this.layer.addFeatures(new OpenLayers.Feature.Vector(printArea.toGeometry()));
+		var pageFeature = new OpenLayers.Feature.Vector(printArea.toGeometry());
+		this.layer.addFeatures(pageFeature);
+		this.selectControl.select(pageFeature);
 	},
 	
 	_deactivate: function(){
