@@ -120,6 +120,8 @@ CartoPress.prototype = {
 				if(request._cp_callback instanceof Function){
 					if(request.status == 201){
 						request._cp_callback(this.url+"/pdfs/"+data.url);
+					} else {
+						request._cp_callback(false);
 					}
 					
 				}
@@ -127,6 +129,10 @@ CartoPress.prototype = {
 				if(e instanceof SyntaxError){
 					console.log('CartoPress Error: Server Response isn\'t json!');
 					console.log(request.responseText);
+					
+					if(request._cp_callback instanceof Function){
+						request._cp_callback(false);
+					}
 					return;
 				} else {
 					throw e;

@@ -53,7 +53,7 @@
 	
 	
 	function Map(mapDivId){
-		var lat = 4099508.5373339, lon = -10429774.028535;
+		var lat = 4588705.5182909, lon = -12122395.582646;
 		var baseLayer = new BaseLayer();
 		var forestLayer = new ForestLayer();
 		var vectorLayer = new VectorLayer();
@@ -94,12 +94,16 @@
 	document.getElementById('printButton').addEventListener('click',print);
 	
 	function print(){
-		cp.print(function(url){
-			location.assign(url);
-		});
 		var button = document.getElementById('printButton');
 		var p = button.parentElement;
-		p.removeChild(button);
+		cp.print(function(url){
+			if(url)window.open(url);
+			p.removeChild(p.lastChild)
+			button.style.display = "block";
+			cp.activate();
+		});
+		
+		button.style.display = "none";
 		p.appendChild(document.createTextNode('Working . . .'));
 		
 	}
