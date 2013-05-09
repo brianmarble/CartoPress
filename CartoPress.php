@@ -150,6 +150,10 @@ class CartoPress {
 		}
 		return null;
 	}
+	
+	private function getFileContents($path){
+		return file_get_contents($path);
+	}
 
 }
 
