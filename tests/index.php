@@ -73,12 +73,31 @@ class CartoPressTest extends UnitTestCase {
     }
     
     function testRetrievePdfRequestSuccessful(){
-    
+		$this->cartoPress-getResponse(array(
+			"PATH_INFO" => "/pdf/1", 
+			'REQUEST_METHOD' => 'GET'
+		),'');
+		$this->assertTrue(in_array('Content-type: application/pdf',$response->headers),"Content type should be set to pdf");
     }
     
     function testRetrievePdfRequestFailed(){
-    
+		$this->cartoPress-getResponse(array(
+			"PATH_INFO" => "/pdf/1", 
+			'REQUEST_METHOD' => 'GET'
+		),'');
+		$this->assertTrue(in_array('HTTP/1.0 404 Not Found',$response->headers),"Reponse code should be 404");
+		
     }
+}
+
+class TestableCartoPress extends CartoPress {
+	
+	public $fileContents;
+	
+	private function getFileContents(){
+		return $this->fileContents;
+	}
+	
 }
 
 ?>
