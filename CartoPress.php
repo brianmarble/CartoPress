@@ -1,6 +1,5 @@
 <?php
 
-ini_set("html_errors",false);
 /**
  * Main class, is created on every request and handles input and output
  * processing.
@@ -12,8 +11,11 @@ ini_set("html_errors",false);
  */
 class CartoPress {
 	
-	public function __construct(){
-
+	
+	public function __construct($config=null,$pdfBuilder=null){
+		$this->config = $config ? $config : new Config();
+		$this->pdfBuilder = $pdfBuilder;
+		/*
 		$request = $this->getRestRequest();
 
 		if(count($request) == 1 && empty($request[0])){
@@ -30,23 +32,38 @@ class CartoPress {
 			}
 		}
 		die();
-		
+		*/
 	}
 	
-	private function outputFormatList(){
-		$cfg = Config::getInstance();
-		$data = array();
-		foreach($cfg->pageLayouts as $displayName => $tcpdfName){
-			$layout = new PageLayout($displayName);
-			$data[] = array(
-				'name' => $layout->getDisplayName(),
-				'ratio' => $layout->getMapRatio()
-			);
+	public function handleRequest(){
+		$response = $this->getResponse($_SERVER,file_get_contents("php://input"));
+		foreach($response->headers as $header){
+			header($header);
 		}
-		
-		header("Content-type: application/json");
-		echo json_encode($data);
-		
+		echo $response->body;
+	}
+	
+	public function getResponse($server, $body){
+		$uri = $this->getUri($server);
+		$type = $this->getRequestType($server['REQUEST_METHOD'],$uri);
+		if($type == RequestType::Information){
+			return $this->getInfoResponse();
+		} else if ($type == RequestType::Formats){
+			return $this->getFormatsListResponse();
+		} else if ($type == RequestType::CreatePdf){
+			return $this->getCreatePdfResponse($body);
+		} else if ($type == RequestType::GetPdf){
+			throw new CartoPressException("Invalid Request");
+		} else {
+			throw new CartoPressException("Invalid Request");
+		}
+	}
+	
+	private function getFormatsListResponse(){
+		$response = new Response();
+		$response->body = json_encode($this->config->getFormats());
+		$response->headers[] = "Content-type: application/json";
+		return $response;
 	}
 	
 	private function handlePdf($request){
@@ -82,37 +99,67 @@ class CartoPress {
 		}
 	}
 	
-	private function getRestRequest(){
-		$relavantURI = str_replace($_SERVER['SCRIPT_NAME'],'',$_SERVER['REQUEST_URI']);
-		$relavantURI = trim($relavantURI,' /');
-		$requestData = explode('/',$relavantURI);
-		return $requestData;
+	private function getUri($server){
+		$path = trim($server['PATH_INFO'],' /');
+		$uri = new stdclass();
+		$uri->basename = basename($path);
+		$uri->dirname = dirname($path);
+		return $uri;
 	}
-
-}
-
-/**
- * Allows automatic class loading by including {classname}.php
- * when a new class is encountered
- */
-function __autoload($class){
-	$filenames = array(
-		"$class.php",
-		"tcpdf/".strtolower($class).".php"
+	
+	private function getInfoResponse(){
+		$response = new Response();
+		$response->body = json_encode(true);
+		return $response;
+	}
+	
+	private function getCreatePdfResponse($spec){
+		if(!isset($this->pdfBuilder))$this->pdfBuilder = new PdfBuilder();
+	
+		$response = new Response();
 		
-	);
-	foreach($filenames as $filename){
-		if(file_exists($filename)){
-			include_once $filename;
-			return;
+		$pdfUri = $this->pdfBuilder->buildPdf($spec);
+		
+		if($pdfUri){
+			$response->headers[] = "HTTP/1.0 201 Created";
+			$response->body = json_encode(array("success" => true, "pdfUri" => $pdfUri));
+		} else {
+			$response->body = json_encode(array("success" => false));
 		}
+		
+		$response->headers[] = "Content-type: application/json";
+		
+		return $response;
 	}
-	throw new CartoPressException("Unable to load class: $class");
+	
+	private function getRequestType($method,$uri){
+		$typedefs = array(
+			array('GET','','', RequestType::Information),
+			array('GET','.','formats', RequestType::Formats),
+			array('GET','pdf',null,RequestType::GetPdf),
+			array('POST','pdf',null,RequestType::CreatePdf)
+		);
+		foreach($typedefs as $type){
+			if(	$method === $type[0]
+				&& $uri->dirname === $type[1]
+				&& ($uri->basename === $type[2] || $type[2] === null)
+			){
+				
+				return $type[3];
+			}
+		}
+		return null;
+	}
+
 }
-class CartoPressException extends Exception {}
 
-new CartoPress();
-
+class RequestType {
+	const Information = 1;
+	const Formats = 2;
+	const CreatePdf = 3;
+	const GetPdf = 4;
+	private function __construct(){}
+}
 
 
 ?>

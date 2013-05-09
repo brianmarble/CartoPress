@@ -14,30 +14,34 @@ class Config {
 	const CONFIG_FILENAME = "Config.cfg";
 	private static $instance;
 
-	public static function getInstance(){
-		if(!isset(Config::$instance)){
-			Config::$instance = new Config();
-		}
-		return Config::$instance;
+	//public static function getInstance(){
+	//	if(!isset(Config::$instance)){
+	//		Config::$instance = new Config();
+	//	}
+	//	return Config::$instance;
+	//}
+	
+	public function __construct(){
+		//$configFileLines = explode("\n",file_get_contents(self::CONFIG_FILENAME));
+		//$currentSection = 'initial';
+		//foreach($configFileLines as $line){
+		//	$strippedLine = trim(preg_replace(self::COMMENT_REGEX,'',$line));
+		//	if(!empty($strippedLine)){
+		//		if(preg_match(self::SECTION_REGEX,$strippedLine,$matches)){
+		//			$this->extractSection($currentSection,$lines);
+		//			$currentSection = $matches[1];
+		//			$lines = array();
+		//		} else {
+		//			$lines[] = $strippedLine;
+		//		}
+		//	}
+		//	
+		//}
+		//$this->extractSection($currentSection,$lines);
 	}
 	
-	private function __construct(){
-		$configFileLines = explode("\n",file_get_contents(self::CONFIG_FILENAME));
-		$currentSection = 'initial';
-		foreach($configFileLines as $line){
-			$strippedLine = trim(preg_replace(self::COMMENT_REGEX,'',$line));
-			if(!empty($strippedLine)){
-				if(preg_match(self::SECTION_REGEX,$strippedLine,$matches)){
-					$this->extractSection($currentSection,$lines);
-					$currentSection = $matches[1];
-					$lines = array();
-				} else {
-					$lines[] = $strippedLine;
-				}
-			}
-			
-		}
-		$this->extractSection($currentSection,$lines);
+	public function getFormats(){
+	
 	}
 	
 	/**

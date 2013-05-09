@@ -4,7 +4,7 @@ class PDFBuilder {
 	
 	private $pdf;
 	
-	public function __construct($spec){
+	public function buildPdf($spec){
 		
 		$this->validatePdfSpecs($spec);
 		
