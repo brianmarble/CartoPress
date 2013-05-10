@@ -30,7 +30,7 @@ class CartoPressTest extends UnitTestCase {
     
     function testFormatListRequest(){
 		$formats = array('hi','bob');
-		$this->config->returns('getFormats',$formats);
+		$this->config->returns('getValue',$formats,array("formats"));
 		$response = $this->cartoPress->getResponse(array(
 			"PATH_INFO" => "/formats", 
 			'REQUEST_METHOD' => 'GET'
@@ -69,7 +69,7 @@ class CartoPressTest extends UnitTestCase {
     
     function testRetrievePdfRequestSuccessful(){
 		$this->cartoPress->fileContents = "File Content";
-		$this->config->returns("getPdfDirectory","path/to/pdfs");
+		$this->config->returns("getValue","path/to/pdfs",array("pdfDir"));
 		$response = $this->cartoPress->getResponse(array(
 			"PATH_INFO" => "/pdf/1", 
 			'REQUEST_METHOD' => 'GET'
@@ -81,7 +81,7 @@ class CartoPressTest extends UnitTestCase {
     
     public function testRetrievePdfRequestFailed(){
 		$this->cartoPress->fileContents = false;
-		$this->config->returns("getPdfDirectory","path/to/pdfs");
+		$this->config->returns("getValue","path/to/pdfs",array("pdfDir"));
 		$response = $this->cartoPress->getResponse(array(
 			"PATH_INFO" => "/pdf/1", 
 			'REQUEST_METHOD' => 'GET'

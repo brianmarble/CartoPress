@@ -43,13 +43,13 @@ class CartoPress {
 	
 	private function getFormatsListResponse(){
 		$response = new Response();
-		$response->body = json_encode($this->config->getFormats());
+		$response->body = json_encode($this->config->getValue("formats"));
 		$response->headers[] = "Content-type: application/json";
 		return $response;
 	}
 
 	private function getGetPdfResponse($uri){
-		$filename = $this->config->getPdfDirectory() . '/' . $uri->basename;
+		$filename = $this->config->getValue("pdfDir") . '/' . $uri->basename;
 		$data = $this->getFileContents($filename);
 		if($data){
 			$response = new Response();

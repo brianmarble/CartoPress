@@ -7,11 +7,13 @@
  */
 class Config {
 
+	const CONFIG_FILENAME = "Config.cfg";
+
 	const COMMENT_REGEX = '~#[\\s\\S]*$~';
 	const SECTION_REGEX = '~[[]([a-zA-Z0-9_]+)[]]~';
 	const KEY_VALUE_REGEX = '~^([^=]+)=([^=]*)$~';
 	const LAYOUT_REGEX = '~([^\\t]*)(?:\\t)\s*([^\s]+)~';
-	const CONFIG_FILENAME = "Config.cfg";
+	
 	private static $instance;
 
 	//public static function getInstance(){
@@ -22,26 +24,31 @@ class Config {
 	//}
 	
 	public function __construct(){
-		//$configFileLines = explode("\n",file_get_contents(self::CONFIG_FILENAME));
-		//$currentSection = 'initial';
-		//foreach($configFileLines as $line){
-		//	$strippedLine = trim(preg_replace(self::COMMENT_REGEX,'',$line));
-		//	if(!empty($strippedLine)){
-		//		if(preg_match(self::SECTION_REGEX,$strippedLine,$matches)){
-		//			$this->extractSection($currentSection,$lines);
-		//			$currentSection = $matches[1];
-		//			$lines = array();
-		//		} else {
-		//			$lines[] = $strippedLine;
-		//		}
-		//	}
-		//	
-		//}
-		//$this->extractSection($currentSection,$lines);
+		$contents = $this->getFileContents(self::CONFIG_FILENAME);
+		$configFileLines = explode("\n",$contents);
+		$currentSection = 'initial';
+		$lines = array();
+		foreach($configFileLines as $line){
+			$strippedLine = trim(preg_replace(self::COMMENT_REGEX,'',$line));
+			if(!empty($strippedLine)){
+				if(preg_match(self::SECTION_REGEX,$strippedLine,$matches)){
+					$this->extractSection($currentSection,$lines);
+					$currentSection = $matches[1];
+					$lines = array();
+				} else {
+					$lines[] = $strippedLine;
+				}
+			}
+			
+		}
+		$this->extractSection($currentSection,$lines);
 	}
 	
-	public function getFormats(){
-	
+	public function getValue($prop){
+		if(isset($this->$prop)){
+			return $this->$prop;
+		}
+		return null;
 	}
 	
 	/**
@@ -68,11 +75,15 @@ class Config {
 	}
 	
 	private function extract_pageSizes($lines){
-		$this->pageLayouts = array();
+		$this->pageSizes = array();
 		foreach($lines as $line){
 			preg_match(self::LAYOUT_REGEX,$line,$matches);
-			$this->pageLayouts[trim($matches[1])] = trim($matches[2]);
+			$this->pageSizes[trim($matches[1])] = trim($matches[2]);
 		}
+	}
+	
+	protected function getFileContents($path){
+		return file_get_contents($path);
 	}
 }
 
