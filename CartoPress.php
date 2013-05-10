@@ -6,8 +6,8 @@
  * 
  * GET  /                 retrieve information about this instance of cartopress
  * GET  /formats          list of formats
- * POST /pdfs/{id}        create a pdf with the given id
- * GET  /pdfs/{id}        retrieve the pdf with the given id
+ * POST /pdf/{id}        create a pdf with the given id
+ * GET  /pdf/{id}        retrieve the pdf with the given id
  */
 class CartoPress {
 	
@@ -24,7 +24,7 @@ class CartoPress {
 		}
 		echo $response->body;
 	}
-	
+
 	public function getResponse($server, $body){
 		$uri = $this->getUri($server);
 		$type = $this->getRequestType($server['REQUEST_METHOD'],$uri);
@@ -40,10 +40,10 @@ class CartoPress {
 			return $this->get404Response();
 		}
 	}
-	
+
 	private function getFormatsListResponse(){
 		$response = new Response();
-		$response->body = json_encode($this->config->getValue("formats"));
+		$response->body = json_encode($this->config->getValue("pageSizes"));
 		$response->headers[] = "Content-type: application/json";
 		return $response;
 	}
@@ -58,17 +58,17 @@ class CartoPress {
 		} else {
 			$response = $this->get404Response();
 		}
-		
+
 		return $response;
 	}
-	
+
 	private function get404Response(){
 		$response = new Response();
 		$response->headers[] = 'HTTP/1.0 404 Not Found';
 		$response->body = "<h1>404 Page Not Found</h1><p>Sorry about that</p>";
 		return $response;
 	}
-	
+
 	private function getUri($server){
 		$path_info = isset($server['PATH_INFO']) ? $server['PATH_INFO'] : '';
 		$path = trim($path_info,' /');
@@ -77,32 +77,35 @@ class CartoPress {
 		$uri->dirname = dirname($path);
 		return $uri;
 	}
-	
+
 	private function getInfoResponse(){
 		$response = new Response();
 		$response->body = json_encode(true);
 		return $response;
 	}
-	
+
 	private function getCreatePdfResponse($spec){
 		if(!isset($this->pdfBuilder))$this->pdfBuilder = new PdfBuilder();
-	
+
 		$response = new Response();
-		
-		$pdfUri = $this->pdfBuilder->buildPdf($spec);
-		
+
+		$pdfUri = $this->pdfBuilder->buildPdf($this->config,$spec);
+
 		if($pdfUri){
 			$response->headers[] = "HTTP/1.0 201 Created";
 			$response->body = json_encode(array("success" => true, "pdfUri" => $pdfUri));
 		} else {
-			$response->body = json_encode(array("success" => false));
+			$response->body = json_encode(array(
+				"success" => false,
+				"message" => $this->pdfBuilder->getErrorMessage()
+			));
 		}
-		
+
 		$response->headers[] = "Content-type: application/json";
-		
+
 		return $response;
 	}
-	
+
 	private function getRequestType($method,$uri){
 		$typedefs = array(
 			array('GET','','', RequestType::Information),
@@ -115,15 +118,18 @@ class CartoPress {
 				&& $uri->dirname === $type[1]
 				&& ($uri->basename === $type[2] || $type[2] === null)
 			){
-				
+
 				return $type[3];
 			}
 		}
 		return null;
 	}
-	
+
 	protected function getFileContents($path){
-		return file_get_contents($path);
+		if(file_exists($path)){
+			return file_get_contents($path);
+		}
+		return false;
 	}
 
 }

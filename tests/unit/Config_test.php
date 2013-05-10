@@ -39,6 +39,8 @@ class ConfigTest extends UnitTestCase {
 	function testFormats(){
 		$pageSizes = $this->config->getValue("pageSizes");
 		$this->assertEqual(count($pageSizes),2);
+		$this->assertEqual($pageSizes['d1'],'n1');
+		$this->assertEqual($pageSizes['d2'],'n2');
 	}
 	
 	function testUnset(){
