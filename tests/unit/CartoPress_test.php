@@ -1,7 +1,7 @@
 <?php
 
-require_once('../simpletest/autorun.php');
-require_once('../../autoLoad.php');
+require_once(dirname(__FILE__) .'/../simpletest/autorun.php');
+require_once(dirname(__FILE__) .'/../../autoLoad.php');
 
 
 Mock::generate('Config');
@@ -15,16 +15,11 @@ class CartoPressTest extends UnitTestCase {
 	function setUp(){
 		$this->config = new MockConfig();
 		$this->pdfBuilder = new MockPdfBuilder();
-		$this->cartoPress = new CartoPress($this->config,$this->pdfBuilder);
-	}
-	
-	function tearDown(){
-
+		$this->cartoPress = new TestableCartoPress($this->config,$this->pdfBuilder);
 	}
 	
     function testInfoRequest() {
        $response = $this->cartoPress->getResponse(array(
-			"PATH_INFO" => "/", 
 			'REQUEST_METHOD' => 'GET'
        ),"");
        $this->assertTrue(is_array($response->headers));
@@ -73,28 +68,44 @@ class CartoPressTest extends UnitTestCase {
     }
     
     function testRetrievePdfRequestSuccessful(){
-		$this->cartoPress-getResponse(array(
+		$this->cartoPress->fileContents = "File Content";
+		$this->config->returns("getPdfDirectory","path/to/pdfs");
+		$response = $this->cartoPress->getResponse(array(
 			"PATH_INFO" => "/pdf/1", 
 			'REQUEST_METHOD' => 'GET'
 		),'');
+		$this->assertEqual($this->cartoPress->filePath,"path/to/pdfs/1","Should use configured directory and passed pdfname");
 		$this->assertTrue(in_array('Content-type: application/pdf',$response->headers),"Content type should be set to pdf");
+		$this->assertEqual($response->body,"File Content");
     }
     
-    function testRetrievePdfRequestFailed(){
-		$this->cartoPress-getResponse(array(
+    public function testRetrievePdfRequestFailed(){
+		$this->cartoPress->fileContents = false;
+		$this->config->returns("getPdfDirectory","path/to/pdfs");
+		$response = $this->cartoPress->getResponse(array(
 			"PATH_INFO" => "/pdf/1", 
 			'REQUEST_METHOD' => 'GET'
 		),'');
+		$this->assertEqual($this->cartoPress->filePath,"path/to/pdfs/1","Should use configured directory and passed pdfname");
 		$this->assertTrue(in_array('HTTP/1.0 404 Not Found',$response->headers),"Reponse code should be 404");
-		
+    }
+    
+    function testInvalidRequest() {
+       $response = $this->cartoPress->getResponse(array(
+			"PATH_INFO" => "/abc/", 
+			'REQUEST_METHOD' => 'GET'
+       ),"");
+		$this->assertTrue(in_array('HTTP/1.0 404 Not Found',$response->headers),"Reponse code should be 404");
     }
 }
 
 class TestableCartoPress extends CartoPress {
 	
 	public $fileContents;
+	public $filePath;
 	
-	private function getFileContents(){
+	protected function getFileContents($path){
+		$this->filePath = $path;
 		return $this->fileContents;
 	}
 	

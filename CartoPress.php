@@ -15,24 +15,6 @@ class CartoPress {
 	public function __construct($config=null,$pdfBuilder=null){
 		$this->config = $config ? $config : new Config();
 		$this->pdfBuilder = $pdfBuilder;
-		/*
-		$request = $this->getRestRequest();
-
-		if(count($request) == 1 && empty($request[0])){
-			$this->outputInfo();
-		} else if ($request[0] == 'formats' && count($request) == 1 ){
-			$this->outputFormatList();
-		} else if ($request[0] == 'pdfs' && count($request) == 2){
-			$this->handlePdf($request);
-		} else {
-			if(false)header("HTTP/1.0 404 Not Found");
-			else {
-				header("Content-type: text/plain");
-				var_dump($_SERVER,$request);
-			}
-		}
-		die();
-		*/
 	}
 	
 	public function handleRequest(){
@@ -53,9 +35,9 @@ class CartoPress {
 		} else if ($type == RequestType::CreatePdf){
 			return $this->getCreatePdfResponse($body);
 		} else if ($type == RequestType::GetPdf){
-			throw new CartoPressException("Invalid Request");
+			return $this->getGetPdfResponse($uri);
 		} else {
-			throw new CartoPressException("Invalid Request");
+			return $this->get404Response();
 		}
 	}
 	
@@ -65,42 +47,31 @@ class CartoPress {
 		$response->headers[] = "Content-type: application/json";
 		return $response;
 	}
-	
-	private function handlePdf($request){
-		$method = $_SERVER['REQUEST_METHOD'];
-		$filename = Config::getInstance()->pdfDir."/".$request[1];
-		if($method == 'GET'){
-			if(file_exists($filename)){
-				header("Content-type: application/pdf");
-				echo file_get_contents($filename);
-			} else {
-				header("HTTP/1.0 404 Not Found");
-			}
-		} else if ($method == 'POST'){
-			if($_SERVER['CONTENT_TYPE'] == 'application/json'){
-				$data = json_decode(file_get_contents('php://input'));
-				
-				$pdf = new PDFBuilder($data);
-				if($pdf && $pdf->saveTo($filename)){
-					header("HTTP/1.0 201 Created");
-					header("Content-type: application/json");
-					echo json_encode(array("url"=>$request[1]));
-				} else {
-					header("HTTP/1.0 200 Created");
-					header("Content-type: application/json");
-					echo json_encode(array("success"=>false));
-				}
-			} else {
-				header("HTTP/1.0 415 Unsupported Media Type");
-			}
+
+	private function getGetPdfResponse($uri){
+		$filename = $this->config->getPdfDirectory() . '/' . $uri->basename;
+		$data = $this->getFileContents($filename);
+		if($data){
+			$response = new Response();
+			$response->headers[] = "Content-type: application/pdf";
+			$response->body = $data;
 		} else {
-			header("HTTP/1.0 405 Method Not Allowed");
-			header("Allow: GET POST");
+			$response = $this->get404Response();
 		}
+		
+		return $response;
+	}
+	
+	private function get404Response(){
+		$response = new Response();
+		$response->headers[] = 'HTTP/1.0 404 Not Found';
+		$response->body = "<h1>404 Page Not Found</h1><p>Sorry about that</p>";
+		return $response;
 	}
 	
 	private function getUri($server){
-		$path = trim($server['PATH_INFO'],' /');
+		$path_info = isset($server['PATH_INFO']) ? $server['PATH_INFO'] : '';
+		$path = trim($path_info,' /');
 		$uri = new stdclass();
 		$uri->basename = basename($path);
 		$uri->dirname = dirname($path);
@@ -151,7 +122,7 @@ class CartoPress {
 		return null;
 	}
 	
-	private function getFileContents($path){
+	protected function getFileContents($path){
 		return file_get_contents($path);
 	}
 
