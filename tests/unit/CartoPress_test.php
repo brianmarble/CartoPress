@@ -6,6 +6,7 @@ require_once(dirname(__FILE__) .'/../../autoLoad.php');
 
 Mock::generate('Config');
 Mock::generate('PdfBuilder');
+//Mock::generate('FormatFactory'); // for some unknown reason this causes errors
 
 class CartoPressTest extends UnitTestCase {
 
@@ -15,7 +16,8 @@ class CartoPressTest extends UnitTestCase {
 	function setUp(){
 		$this->config = new MockConfig();
 		$this->pdfBuilder = new MockPdfBuilder();
-		$this->cartoPress = new TestableCartoPress($this->config,$this->pdfBuilder);
+		$this->formatFactory = new MockFormatFactory();
+		$this->cartoPress = new TestableCartoPress($this->config,$this->pdfBuilder,$this->formatFactory);
 	}
 
     function testInfoRequest() {
@@ -30,7 +32,7 @@ class CartoPressTest extends UnitTestCase {
 
     function testFormatListRequest(){
 		$formats = array('hi','bob');
-		$this->config->returns('getValue',$formats,array("pageSizes"));
+		$this->formatFactory->returns("getFormatList",$formats);
 		$response = $this->cartoPress->getResponse(array(
 			"PATH_INFO" => "/formats",
 			'REQUEST_METHOD' => 'GET'
@@ -110,5 +112,19 @@ class TestableCartoPress extends CartoPress {
 		return $this->fileContents;
 	}
 
+}
+
+class MockFormatFactory {
+	private $formatListReturn;
+
+	function returns($method,$value){
+		if($method == "getFormatList"){
+			$this->formatListReturn = $value;
+		}
+	}
+	
+	function getFormatList(){
+		return $this->formatListReturn;
+	}
 }
 ?>

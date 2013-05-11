@@ -3,20 +3,21 @@
 /**
  * Main class, is created on every request and handles input and output
  * processing.
- * 
+ *
  * GET  /                 retrieve information about this instance of cartopress
  * GET  /formats          list of formats
  * POST /pdf/{id}        create a pdf with the given id
  * GET  /pdf/{id}        retrieve the pdf with the given id
  */
 class CartoPress {
-	
-	
-	public function __construct($config=null,$pdfBuilder=null){
+
+
+	public function __construct($config=null,$pdfBuilder=null,$formatFactory=null){
 		$this->config = $config ? $config : new Config();
 		$this->pdfBuilder = $pdfBuilder;
+		$this->formatFactory = isset($formatFactory) ? $formatFactory : new FormatFactory($this->config);
 	}
-	
+
 	public function handleRequest(){
 		$response = $this->getResponse($_SERVER,file_get_contents("php://input"));
 		foreach($response->headers as $header){
@@ -43,7 +44,7 @@ class CartoPress {
 
 	private function getFormatsListResponse(){
 		$response = new Response();
-		$response->body = json_encode($this->config->getValue("pageSizes"));
+		$response->body = json_encode($this->formatFactory->getFormatList());
 		$response->headers[] = "Content-type: application/json";
 		return $response;
 	}
