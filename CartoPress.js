@@ -70,8 +70,7 @@ CartoPress.prototype = {
 				this.pageLayouts = this.json.read(request.responseText);
 			} catch(e){
 				if(e instanceof SyntaxError){
-					console.log('CartoPress Error: Server Response isn\'t json!');
-					console.log(request.responseText);
+					this.outputSyntaxError(request.responseText);
 					return;
 				} else {
 					throw e;
@@ -81,6 +80,12 @@ CartoPress.prototype = {
 				this.getPageLayouts(this.pageLayoutsCallback);
 			}
 		}
+	},
+	
+	outputSyntaxError: function(errorText){
+		var div = document.createElement('div');
+		div.innerHTML = errorText;
+		document.body.insertBefore(div,document.body.firstChild);
 	},
 
 	createPdf: function(map,bounds,format,id,callback){
@@ -127,9 +132,7 @@ CartoPress.prototype = {
 				}
 			} catch(e){
 				if(e instanceof SyntaxError){
-					console.log('CartoPress Error: Server Response isn\'t json!');
-					console.log(request.responseText);
-					
+					this.outputSyntaxError(request.responseText);
 					if(request._cp_callback instanceof Function){
 						request._cp_callback(false);
 					}
