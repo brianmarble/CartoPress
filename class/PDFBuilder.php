@@ -40,6 +40,8 @@ class PDFBuilder {
 			return new WMSLayer($layer,$pageLayout,$bounds);
 		} else if ($layer->type == 'vector'){
 			return new VectorLayer($layer,$pageLayout,$bounds);
+		} else if ($layer->type == 'svg'){
+			return new SVGLayer($layer,$pageLayout,$bounds);
 		} else {
 			throw new CartoPressException("Layer type not found: $layer->type");
 		}

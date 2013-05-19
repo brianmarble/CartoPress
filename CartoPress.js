@@ -11,10 +11,12 @@ var CartoPress = function(map,url){
 	map.addControl(this.selectPrintAreaControl);
 	this.sendAjaxForPageLayouts();
 }
+
 CartoPress.serverUrl = (function(){
 	var scriptEl = document.body ? document.body.lastChild : document.head.lastChild;
 	return scriptEl.src.replace(/js/,'php');
 }());
+
 CartoPress.util = {
 	toRatio: function(bounds,ratio){
 		var size = bounds.getSize(),
@@ -41,6 +43,7 @@ CartoPress.util = {
 		return newBounds;
 	},
 }
+
 CartoPress.prototype = {
 	
 	sendAjaxForPageLayouts: function(){
@@ -154,12 +157,12 @@ CartoPress.prototype = {
 	},
 
 	getVectorSpec: function(layer,bounds){
-		var gj = new CartoPress.GeoJson();
-		var includedFeatures = this.getFeaturesInBounds(layer.features,bounds);
+		var svgc = new CartoPress.SVGConverter();
+		var svg = svgc.convert(layer,bounds);
 		return {
 			name: layer.name,
-			type: 'vector',
-			features: gj.write(includedFeatures)
+			type: 'svg',
+			svg: svg
 		}
 	},
 	
@@ -283,4 +286,44 @@ CartoPress.GeoJson = OpenLayers.Class(OpenLayers.Format.GeoJSON,{
 	}
 });
 
+CartoPress.SVGRenderer = OpenLayers.Class(OpenLayers.Renderer.SVG,{
+	supported: function(){return true;}
+});
+
+CartoPress.SVGConverter = OpenLayers.Class({
+	initialize: function(){},
+	convert: function(origLayer,bounds){
+		var layer = origLayer.clone();
+		var map = new OpenLayers.Map({
+			maxExtent: bounds,
+			center: origLayer.map.getCenter(),
+			resolution: origLayer.map.getResolution(),
+			allOverlays: true
+		});
+		map.addLayer(layer);
+		var container = document.createElement('div');
+		var renderer = new CartoPress.SVGRenderer(container);
+		renderer.map = {
+			getResolution: function(){
+				return map.getResolution();
+			},
+			calculateBounds: function(){
+				return map.calculateBounds();
+			}
+		};
+		var s = bounds.getSize(),
+			r = origLayer.map.getResolution(),
+			w = s.w /r,
+			h = s.h /r;
+		
+		renderer.setSize(new OpenLayers.Size(w,h));
+		renderer.setExtent(bounds); // could be used to set extent of printed page?
+		layer.features.forEach(function(feature){
+			renderer.drawFeature(feature);
+		});
+		var svg = container.firstChild;
+		svg.setAttribute("xmlns","http://www.w3.org/2000/svg");
+		return '<?xml version="1.0" encoding="UTF-8" standalone="no"?>'+container.innerHTML;
+	}
+});
 
