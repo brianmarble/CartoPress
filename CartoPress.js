@@ -63,17 +63,6 @@ CartoPress.util = {
 		bArray[extendSides[0]] += extendSize;
 		bArray[extendSides[1]] -= extendSize;
 		var newBounds = OpenLayers.Bounds.fromArray(bArray);
-		if(Number.isNaN(extendSize)){
-			console.log('ratio', ratio);
-			console.log('heightDifference', heightDifference);
-			console.log('widthDifference', widthDifference);
-			console.log('adjustHeight', adjustHeight);
-			console.log('extendSize', extendSize);
-			console.log('extendSides', extendSides);
-			
-			console.log(bounds,extendSize,adjustHeight,newBounds);
-			throw 'ouch!';
-		}
 		return newBounds;
 	},
 }
