@@ -345,8 +345,9 @@ CartoPress.SVGConverter = OpenLayers.Class({
 			renderer.drawFeature(feature);
 		});
 		var svg = container.firstChild;
-		svg.removeAttribute("xmlns");
-		svg.setAttribute("xmlns","http://www.w3.org/2000/svg");
+		if(!svg.hasAttribute("xmlns")){
+			svg.setAttribute("xmlns","http://www.w3.org/2000/svg");
+		}
 		return '<?xml version="1.0" encoding="UTF-8" standalone="no"?>'+container.innerHTML;
 	}
 });
