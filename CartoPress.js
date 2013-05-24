@@ -398,7 +398,6 @@ CartoPress.SVGConverter = OpenLayers.Class({
 		map.addLayer(layer);
 		var container = document.createElement('div');
 		
-		this.enableShims();
 		var renderer = new CartoPress.SVGRenderer(container);
 		renderer.map = {
 			getResolution: function(){
@@ -419,49 +418,8 @@ CartoPress.SVGConverter = OpenLayers.Class({
 		layer.features.forEach(function(feature){
 			renderer.drawFeature(feature);
 		});
-		this.removeShims()
 		var svg = container.firstChild;
 		return '<?xml version="1.0" encoding="UTF-8" standalone="no"?>'+container.innerHTML;
-	},
-	
-	enableShims: function(){
-		if(!document.createElementNS){
-			this.temporaryShim(document,'createElementNS',this.createElementNSShim);
-		}
-		if(typeof HTMLElement === "undefined"){
-			this.temporaryShim(Element.prototype,'setAttributeNS',this.setAttributeNSShim);
-			this.temporaryShim(Element.prototype,'getAttributeNS',this.getAttributeNSShim);
-		}
-	},
-	
-	removeShims: function(){
-		if(document.createElementNS.restore){
-			document.createElementNS.restore();
-		}
-		if(typeof HTMLElement === "undefined"){
-			Element.prototype.setAttributeNS.restore();
-			Element.prototype.getAttributeNS.restore();
-		}
-	},
-	
-	temporaryShim: function(object,method,shim){
-		var original = object[method];
-		object[method] = shim
-		shim.restore = function(){
-			object.method = original;
-		}
-	},
-	
-	createElementNSShim: function(uri, name) {
-		return document.createElement(name);
-	},
-	
-	setAttributeNSShim: function(ns, name, value){
-		return this.setAttribute(name,value);
-	},
-	
-	getAttributeNSShim: function(ns, name){
-		return this.getAttribute(name);
 	}
 
 });
