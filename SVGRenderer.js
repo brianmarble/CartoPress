@@ -19,7 +19,7 @@ CartoPress.SVGRenderer = OpenLayers.Class(OpenLayers.Renderer.SVG, {
 
             var extentString = "0 0 " + this.size.w + " " + this.size.h;
 
-            this.rendererRoot.setAttributeNS(null, "viewBox", extentString);
+            this.rendererRoot.setAttribute( "viewBox", extentString);
             this.translate(this.xOffset, 0);
             return true;
         } else {
@@ -40,7 +40,7 @@ CartoPress.SVGRenderer = OpenLayers.Class(OpenLayers.Renderer.SVG, {
             if (x || y) {
                 transformString = "translate(" + x + "," + y + ")";
             }
-            this.root.setAttributeNS(null, "transform", transformString);
+            this.root.setAttribute( "transform", transformString);
             this.translationParameters = {x: x, y: y};
             return true;
         }
@@ -49,14 +49,14 @@ CartoPress.SVGRenderer = OpenLayers.Class(OpenLayers.Renderer.SVG, {
     setSize: function(size) {
         OpenLayers.Renderer.prototype.setSize.apply(this, arguments);
 
-        this.rendererRoot.setAttributeNS(null, "width", this.size.w);
-        this.rendererRoot.setAttributeNS(null, "height", this.size.h);
+        this.rendererRoot.setAttribute( "width", this.size.w);
+        this.rendererRoot.setAttribute( "height", this.size.h);
     },
 
     setStyle: function(node, style, options) {
         style = style  || node._style;
         options = options || node._options;
-        var r = parseFloat(node.getAttributeNS(null, "r"));
+        var r = parseFloat(node.getAttribute( "r"));
         var widthFactor = 1;
         var pos;
         if (node._geometryClass == "OpenLayers.Geometry.Point" && r) {
@@ -67,7 +67,7 @@ CartoPress.SVGRenderer = OpenLayers.Class(OpenLayers.Renderer.SVG, {
                 pos = this.getPosition(node);
 
                 if (style.graphicTitle) {
-                    node.setAttributeNS(null, "title", style.graphicTitle);
+                    node.setAttribute( "title", style.graphicTitle);
 
                     var titleNode = node.getElementsByTagName("title");
                     if (titleNode.length > 0) {
@@ -79,7 +79,7 @@ CartoPress.SVGRenderer = OpenLayers.Class(OpenLayers.Renderer.SVG, {
                     }
                 }
                 if (style.graphicWidth && style.graphicHeight) {
-                  node.setAttributeNS(null, "preserveAspectRatio", "none");
+                  node.setAttribute( "preserveAspectRatio", "none");
                 }
                 var width = style.graphicWidth || style.graphicHeight;
                 var height = style.graphicHeight || style.graphicWidth;
@@ -92,12 +92,12 @@ CartoPress.SVGRenderer = OpenLayers.Class(OpenLayers.Renderer.SVG, {
 
                 var opacity = style.graphicOpacity || style.fillOpacity;
 
-                node.setAttributeNS(null, "x", (pos.x + xOffset).toFixed());
-                node.setAttributeNS(null, "y", (pos.y + yOffset).toFixed());
-                node.setAttributeNS(null, "width", width);
-                node.setAttributeNS(null, "height", height);
-                node.setAttributeNS(this.xlinkns, "href", style.externalGraphic);
-                node.setAttributeNS(null, "style", "opacity: "+opacity);
+                node.setAttribute( "x", (pos.x + xOffset).toFixed());
+                node.setAttribute( "y", (pos.y + yOffset).toFixed());
+                node.setAttribute( "width", width);
+                node.setAttribute( "height", height);
+                //node.setAttributeNS(this.xlinkns, "href", style.externalGraphic);
+                node.setAttribute( "style", "opacity: "+opacity);
                 node.onclick = OpenLayers.Renderer.SVG.preventDefault;
             } else if (this.isComplexSymbol(style.graphicName)) {
 
@@ -115,12 +115,12 @@ CartoPress.SVGRenderer = OpenLayers.Class(OpenLayers.Renderer.SVG, {
 
                 node.firstChild && node.removeChild(node.firstChild);
                 node.appendChild(src.firstChild.cloneNode(true));
-                node.setAttributeNS(null, "viewBox", src.getAttributeNS(null, "viewBox"));
+                node.setAttribute( "viewBox", src.getAttribute( "viewBox"));
 
-                node.setAttributeNS(null, "width", size);
-                node.setAttributeNS(null, "height", size);
-                node.setAttributeNS(null, "x", pos.x - offset);
-                node.setAttributeNS(null, "y", pos.y - offset);
+                node.setAttribute( "width", size);
+                node.setAttribute( "height", size);
+                node.setAttribute( "x", pos.x - offset);
+                node.setAttribute( "y", pos.y - offset);
 
                 if(nextSibling) {
                     parent.insertBefore(node, nextSibling);
@@ -128,7 +128,7 @@ CartoPress.SVGRenderer = OpenLayers.Class(OpenLayers.Renderer.SVG, {
                     parent.appendChild(node);
                 }
             } else {
-                node.setAttributeNS(null, "r", style.pointRadius);
+                node.setAttribute( "r", style.pointRadius);
             }
 
             var rotation = style.rotation;
@@ -137,12 +137,12 @@ CartoPress.SVGRenderer = OpenLayers.Class(OpenLayers.Renderer.SVG, {
                 node._rotation = rotation;
                 rotation |= 0;
                 if (node.nodeName !== "svg") {
-                    node.setAttributeNS(null, "transform",
+                    node.setAttribute( "transform",
                         "rotate(" + rotation + " " + pos.x + " " +
                         pos.y + ")");
                 } else {
                     var metrics = this.symbolMetrics[src.id];
-                    node.firstChild.setAttributeNS(null, "transform", "rotate("
+                    node.firstChild.setAttribute( "transform", "rotate("
                         + rotation + " "
                         + metrics[1] + " "
                         + metrics[2] + ")");
@@ -151,40 +151,40 @@ CartoPress.SVGRenderer = OpenLayers.Class(OpenLayers.Renderer.SVG, {
         }
 
         if (options.isFilled) {
-            node.setAttributeNS(null, "fill", style.fillColor);
-            node.setAttributeNS(null, "fill-opacity", style.fillOpacity);
+            node.setAttribute( "fill", style.fillColor);
+            node.setAttribute( "fill-opacity", style.fillOpacity);
         } else {
-            node.setAttributeNS(null, "fill", "none");
+            node.setAttribute( "fill", "none");
         }
 
         if (options.isStroked) {
-            node.setAttributeNS(null, "stroke", style.strokeColor);
-            node.setAttributeNS(null, "stroke-opacity", style.strokeOpacity);
-            node.setAttributeNS(null, "stroke-width", style.strokeWidth * widthFactor);
-            node.setAttributeNS(null, "stroke-linecap", style.strokeLinecap || "round");
+            node.setAttribute( "stroke", style.strokeColor);
+            node.setAttribute( "stroke-opacity", style.strokeOpacity);
+            node.setAttribute( "stroke-width", style.strokeWidth * widthFactor);
+            node.setAttribute( "stroke-linecap", style.strokeLinecap || "round");
 
-            node.setAttributeNS(null, "stroke-linejoin", "round");
-            style.strokeDashstyle && node.setAttributeNS(null,
+            node.setAttribute( "stroke-linejoin", "round");
+            style.strokeDashstyle && node.setAttribute(
                 "stroke-dasharray", this.dashStyle(style, widthFactor));
         } else {
-            node.setAttributeNS(null, "stroke", "none");
+            node.setAttribute( "stroke", "none");
         }
 
         if (style.pointerEvents) {
-            node.setAttributeNS(null, "pointer-events", style.pointerEvents);
+            node.setAttribute( "pointer-events", style.pointerEvents);
         }
 
         if (style.cursor != null) {
-            node.setAttributeNS(null, "cursor", style.cursor);
+            node.setAttribute( "cursor", style.cursor);
         }
 
         return node;
     },
 
     createNode: function(type, id) {
-        var node = document.createElementNS(this.xmlns, type);
+        var node = document.createElement(type);
         if (id) {
-            node.setAttributeNS(null, "id", id);
+            node.setAttribute( "id", id);
         }
         return node;
     },
@@ -195,9 +195,9 @@ CartoPress.SVGRenderer = OpenLayers.Class(OpenLayers.Renderer.SVG, {
         var y = (this.top - geometry.y / resolution);
 
         if (this.inValidRange(x, y)) {
-            node.setAttributeNS(null, "cx", x);
-            node.setAttributeNS(null, "cy", y);
-            node.setAttributeNS(null, "r", radius);
+            node.setAttribute( "cx", x);
+            node.setAttribute( "cy", y);
+            node.setAttribute( "r", radius);
             return node;
         } else {
             return false;
@@ -208,7 +208,7 @@ CartoPress.SVGRenderer = OpenLayers.Class(OpenLayers.Renderer.SVG, {
     drawLineString: function(node, geometry) {
         var componentsResult = this.getComponentsString(geometry.components);
         if (componentsResult.path) {
-            node.setAttributeNS(null, "points", componentsResult.path);
+            node.setAttribute( "points", componentsResult.path);
             return (componentsResult.complete ? node : null);
         } else {
             return false;
@@ -218,7 +218,7 @@ CartoPress.SVGRenderer = OpenLayers.Class(OpenLayers.Renderer.SVG, {
     drawLinearRing: function(node, geometry) {
         var componentsResult = this.getComponentsString(geometry.components);
         if (componentsResult.path) {
-            node.setAttributeNS(null, "points", componentsResult.path);
+            node.setAttribute( "points", componentsResult.path);
             return (componentsResult.complete ? node : null);
         } else {
             return false;
@@ -244,8 +244,8 @@ CartoPress.SVGRenderer = OpenLayers.Class(OpenLayers.Renderer.SVG, {
         }
         d += " z";
         if (draw) {
-            node.setAttributeNS(null, "d", d);
-            node.setAttributeNS(null, "fill-rule", "evenodd");
+            node.setAttribute( "d", d);
+            node.setAttribute( "fill-rule", "evenodd");
             return complete ? node : null;
         } else {
             return false;
@@ -258,10 +258,10 @@ CartoPress.SVGRenderer = OpenLayers.Class(OpenLayers.Renderer.SVG, {
         var y = (this.top - geometry.y / resolution);
 
         if (this.inValidRange(x, y)) {
-            node.setAttributeNS(null, "x", x);
-            node.setAttributeNS(null, "y", y);
-            node.setAttributeNS(null, "width", geometry.width / resolution);
-            node.setAttributeNS(null, "height", geometry.height / resolution);
+            node.setAttribute( "x", x);
+            node.setAttribute( "y", y);
+            node.setAttribute( "width", geometry.width / resolution);
+            node.setAttribute( "height", geometry.height / resolution);
             return node;
         } else {
             return false;
@@ -288,45 +288,45 @@ CartoPress.SVGRenderer = OpenLayers.Class(OpenLayers.Renderer.SVG, {
         var suffix = (drawOutline)?this.LABEL_OUTLINE_SUFFIX:this.LABEL_ID_SUFFIX;
         var label = this.nodeFactory(featureId + suffix, "text");
 
-        label.setAttributeNS(null, "x", x);
-        label.setAttributeNS(null, "y", -y);
+        label.setAttribute( "x", x);
+        label.setAttribute( "y", -y);
 
         if (style.fontColor) {
-            label.setAttributeNS(null, "fill", style.fontColor);
+            label.setAttribute( "fill", style.fontColor);
         }
         if (style.fontStrokeColor) {
-            label.setAttributeNS(null, "stroke", style.fontStrokeColor);
+            label.setAttribute( "stroke", style.fontStrokeColor);
         }
         if (style.fontStrokeWidth) {
-            label.setAttributeNS(null, "stroke-width", style.fontStrokeWidth);
+            label.setAttribute( "stroke-width", style.fontStrokeWidth);
         }
         if (style.fontOpacity) {
-            label.setAttributeNS(null, "opacity", style.fontOpacity);
+            label.setAttribute( "opacity", style.fontOpacity);
         }
         if (style.fontFamily) {
-            label.setAttributeNS(null, "font-family", style.fontFamily);
+            label.setAttribute( "font-family", style.fontFamily);
         }
         if (style.fontSize) {
-            label.setAttributeNS(null, "font-size", style.fontSize);
+            label.setAttribute( "font-size", style.fontSize);
         }
         if (style.fontWeight) {
-            label.setAttributeNS(null, "font-weight", style.fontWeight);
+            label.setAttribute( "font-weight", style.fontWeight);
         }
         if (style.fontStyle) {
-            label.setAttributeNS(null, "font-style", style.fontStyle);
+            label.setAttribute( "font-style", style.fontStyle);
         }
         if (style.labelSelect === true) {
-            label.setAttributeNS(null, "pointer-events", "visible");
+            label.setAttribute( "pointer-events", "visible");
             label._featureId = featureId;
         } else {
-            label.setAttributeNS(null, "pointer-events", "none");
+            label.setAttribute( "pointer-events", "none");
         }
         var align = style.labelAlign || OpenLayers.Renderer.defaultSymbolizer.labelAlign;
-        label.setAttributeNS(null, "text-anchor",
+        label.setAttribute( "text-anchor",
             OpenLayers.Renderer.SVG.LABEL_ALIGN[align[0]] || "middle");
 
         if (OpenLayers.IS_GECKO === true) {
-            label.setAttributeNS(null, "dominant-baseline",
+            label.setAttribute( "dominant-baseline",
                 OpenLayers.Renderer.SVG.LABEL_ALIGN[align[1]] || "central");
         }
 
@@ -343,7 +343,7 @@ CartoPress.SVGRenderer = OpenLayers.Class(OpenLayers.Renderer.SVG, {
                 tspan._geometryClass = location.CLASS_NAME;
             }
             if (OpenLayers.IS_GECKO === false) {
-                tspan.setAttributeNS(null, "baseline-shift",
+                tspan.setAttribute( "baseline-shift",
                     OpenLayers.Renderer.SVG.LABEL_VSHIFT[align[1]] || "-35%");
             }
             tspan.setAttribute("x", x);
@@ -369,8 +369,8 @@ CartoPress.SVGRenderer = OpenLayers.Class(OpenLayers.Renderer.SVG, {
 
     getPosition: function(node) {
         return({
-            x: parseFloat(node.getAttributeNS(null, "cx")),
-            y: parseFloat(node.getAttributeNS(null, "cy"))
+            x: parseFloat(node.getAttribute( "cx")),
+            y: parseFloat(node.getAttribute( "cy"))
         });
     },
 
@@ -409,14 +409,14 @@ CartoPress.SVGRenderer = OpenLayers.Class(OpenLayers.Renderer.SVG, {
             points.push(x, ",", y);
         }
 
-        node.setAttributeNS(null, "points", points.join(" "));
+        node.setAttribute( "points", points.join(" "));
 
         var width = symbolExtent.getWidth();
         var height = symbolExtent.getHeight();
 
         var viewBox = [symbolExtent.left - width,
                         symbolExtent.bottom - height, width * 3, height * 3];
-        symbolNode.setAttributeNS(null, "viewBox", viewBox.join(" "));
+        symbolNode.setAttribute( "viewBox", viewBox.join(" "));
         this.symbolMetrics[id] = [
             Math.max(width, height),
             symbolExtent.getCenterLonLat().lon,
