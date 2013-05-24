@@ -2,40 +2,8 @@
 
 CartoPress.SVGRenderer = OpenLayers.Class(OpenLayers.Renderer.SVG, {
 
-    xmlns: "http://www.w3.org/2000/svg",
-
-    xlinkns: "http://www.w3.org/1999/xlink",
-
-    MAX_PIXEL: 15000,
-
-    translationParameters: null,
-
-    symbolMetrics: null,
-
-    initialize: function(containerID) {
-        if (!this.supported()) {
-            return;
-        }
-        OpenLayers.Renderer.Elements.prototype.initialize.apply(this,
-                                                                arguments);
-        this.translationParameters = {x: 0, y: 0};
-
-        this.symbolMetrics = {};
-    },
-
     supported: function() {
-        var svgFeature = "http://www.w3.org/TR/SVG11/feature#";
-        return (document.implementation &&
-           (document.implementation.hasFeature("org.w3c.svg", "1.0") ||
-            document.implementation.hasFeature(svgFeature + "SVG", "1.1") ||
-            document.implementation.hasFeature(svgFeature + "BasicStructure", "1.1") ));
-    },
-
-    inValidRange: function(x, y, xyOnly) {
-        var left = x + (xyOnly ? 0 : this.translationParameters.x);
-        var top = y + (xyOnly ? 0 : this.translationParameters.y);
-        return (left >= -this.MAX_PIXEL && left <= this.MAX_PIXEL &&
-                top >= -this.MAX_PIXEL && top <= this.MAX_PIXEL);
+        return true;
     },
 
     setExtent: function(extent, resolutionChanged) {
@@ -83,37 +51,6 @@ CartoPress.SVGRenderer = OpenLayers.Class(OpenLayers.Renderer.SVG, {
 
         this.rendererRoot.setAttributeNS(null, "width", this.size.w);
         this.rendererRoot.setAttributeNS(null, "height", this.size.h);
-    },
-
-    getNodeType: function(geometry, style) {
-        var nodeType = null;
-        switch (geometry.CLASS_NAME) {
-            case "OpenLayers.Geometry.Point":
-                if (style.externalGraphic) {
-                    nodeType = "image";
-                } else if (this.isComplexSymbol(style.graphicName)) {
-                    nodeType = "svg";
-                } else {
-                    nodeType = "circle";
-                }
-                break;
-            case "OpenLayers.Geometry.Rectangle":
-                nodeType = "rect";
-                break;
-            case "OpenLayers.Geometry.LineString":
-                nodeType = "polyline";
-                break;
-            case "OpenLayers.Geometry.LinearRing":
-                nodeType = "polygon";
-                break;
-            case "OpenLayers.Geometry.Polygon":
-            case "OpenLayers.Geometry.Curve":
-                nodeType = "path";
-                break;
-            default:
-                break;
-        }
-        return nodeType;
     },
 
     setStyle: function(node, style, options) {
@@ -244,57 +181,12 @@ CartoPress.SVGRenderer = OpenLayers.Class(OpenLayers.Renderer.SVG, {
         return node;
     },
 
-    dashStyle: function(style, widthFactor) {
-        var w = style.strokeWidth * widthFactor;
-        var str = style.strokeDashstyle;
-        switch (str) {
-            case 'solid':
-                return 'none';
-            case 'dot':
-                return [1, 4 * w].join();
-            case 'dash':
-                return [4 * w, 4 * w].join();
-            case 'dashdot':
-                return [4 * w, 4 * w, 1, 4 * w].join();
-            case 'longdash':
-                return [8 * w, 4 * w].join();
-            case 'longdashdot':
-                return [8 * w, 4 * w, 1, 4 * w].join();
-            default:
-                return OpenLayers.String.trim(str).replace(/\s+/g, ",");
-        }
-    },
-
     createNode: function(type, id) {
         var node = document.createElementNS(this.xmlns, type);
         if (id) {
             node.setAttributeNS(null, "id", id);
         }
         return node;
-    },
-
-    nodeTypeCompare: function(node, type) {
-        return (type == node.nodeName);
-    },
-
-    createRenderRoot: function() {
-        var svg = this.nodeFactory(this.container.id + "_svgRoot", "svg");
-        svg.style.display = "block";
-        return svg;
-    },
-
-    createRoot: function(suffix) {
-        return this.nodeFactory(this.container.id + suffix, "g");
-    },
-
-    createDefs: function() {
-        var defs = this.nodeFactory(this.container.id + "_defs", "defs");
-        this.rendererRoot.appendChild(defs);
-        return defs;
-    },
-
-    drawPoint: function(node, geometry) {
-        return this.drawCircle(node, geometry, 1);
     },
 
     drawCircle: function(node, geometry, radius) {
@@ -475,79 +367,6 @@ CartoPress.SVGRenderer = OpenLayers.Class(OpenLayers.Renderer.SVG, {
         }
     },
 
-    getComponentsString: function(components, separator) {
-        var renderCmp = [];
-        var complete = true;
-        var len = components.length;
-        var strings = [];
-        var str, component;
-        for(var i=0; i<len; i++) {
-            component = components[i];
-            renderCmp.push(component);
-            str = this.getShortString(component);
-            if (str) {
-                strings.push(str);
-            } else {
-
-                if (i > 0) {
-                    if (this.getShortString(components[i - 1])) {
-                        strings.push(this.clipLine(components[i],
-                            components[i-1]));
-                    }
-                }
-                if (i < len - 1) {
-                    if (this.getShortString(components[i + 1])) {
-                        strings.push(this.clipLine(components[i],
-                            components[i+1]));
-                    }
-                }
-                complete = false;
-            }
-        }
-
-        return {
-            path: strings.join(separator || ","),
-            complete: complete
-        };
-    },
-
-    clipLine: function(badComponent, goodComponent) {
-        if (goodComponent.equals(badComponent)) {
-            return "";
-        }
-        var resolution = this.getResolution();
-        var maxX = this.MAX_PIXEL - this.translationParameters.x;
-        var maxY = this.MAX_PIXEL - this.translationParameters.y;
-        var x1 = (goodComponent.x - this.featureDx) / resolution + this.left;
-        var y1 = this.top - goodComponent.y / resolution;
-        var x2 = (badComponent.x - this.featureDx) / resolution + this.left;
-        var y2 = this.top - badComponent.y / resolution;
-        var k;
-        if (x2 < -maxX || x2 > maxX) {
-            k = (y2 - y1) / (x2 - x1);
-            x2 = x2 < 0 ? -maxX : maxX;
-            y2 = y1 + (x2 - x1) * k;
-        }
-        if (y2 < -maxY || y2 > maxY) {
-            k = (x2 - x1) / (y2 - y1);
-            y2 = y2 < 0 ? -maxY : maxY;
-            x2 = x1 + (y2 - y1) * k;
-        }
-        return x2 + "," + y2;
-    },
-
-    getShortString: function(point) {
-        var resolution = this.getResolution();
-        var x = ((point.x - this.featureDx) / resolution + this.left);
-        var y = (this.top - point.y / resolution);
-
-        if (this.inValidRange(x, y)) {
-            return x + "," + y;
-        } else {
-            return false;
-        }
-    },
-
     getPosition: function(node) {
         return({
             x: parseFloat(node.getAttributeNS(null, "cx")),
@@ -606,38 +425,6 @@ CartoPress.SVGRenderer = OpenLayers.Class(OpenLayers.Renderer.SVG, {
 
         this.defs.appendChild(symbolNode);
         return symbolNode;
-    },
-
-    getFeatureIdFromEvent: function(evt) {
-        var featureId = OpenLayers.Renderer.Elements.prototype.getFeatureIdFromEvent.apply(this, arguments);
-        if(!featureId) {
-            var target = evt.target;
-            featureId = target.parentNode && target != this.rendererRoot ?
-                target.parentNode._featureId : undefined;
-        }
-        return featureId;
-    },
-
-    CLASS_NAME: "OpenLayers.Renderer.SVG"
+    }
+    
 });
-
-OpenLayers.Renderer.SVG.LABEL_ALIGN = {
-    "l": "start",
-    "r": "end",
-    "b": "bottom",
-    "t": "hanging"
-};
-
-OpenLayers.Renderer.SVG.LABEL_VSHIFT = {
-    "t": "-70%",
-    "b": "0"
-};
-
-OpenLayers.Renderer.SVG.LABEL_VFACTOR = {
-    "t": 0,
-    "b": -1
-};
-
-OpenLayers.Renderer.SVG.preventDefault = function(e) {
-    e.preventDefault && e.preventDefault();
-};
