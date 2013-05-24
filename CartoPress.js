@@ -47,8 +47,9 @@ var CartoPress = function(map,url){
 }
 
 CartoPress.serverUrl = (function(){
-	var scriptEl = document.body ? document.body.lastChild : document.head.lastChild;
-	return scriptEl.src.replace(/js/,'php');
+	var scripts = document.getElementsByTagName('script');
+	var script = scripts[scripts.length -1];
+	return script.src.replace(/js/,'php');
 }());
 
 CartoPress.util = {
