@@ -1,5 +1,6 @@
 'use strict';
 
+
 // bind shim
 if (!Function.prototype.bind) {
   Function.prototype.bind = function (oThis) {
@@ -33,6 +34,80 @@ if ( !Array.prototype.forEach ) {
     }
   }
 }
+
+// addEventListener shim
+(function() {
+  if (!Event.prototype.preventDefault) {
+    Event.prototype.preventDefault=function() {
+      this.returnValue=false;
+    };
+  }
+  if (!Event.prototype.stopPropagation) {
+    Event.prototype.stopPropagation=function() {
+      this.cancelBubble=true;
+    };
+  }
+  if (!Element.prototype.addEventListener) {
+    var eventListeners=[];
+     
+    var addEventListener=function(type,listener /*, useCapture (will be ignored) */) {
+      var self=this;
+      var wrapper=function(e) {
+        e.target=e.srcElement;
+        e.currentTarget=self;
+        if (listener.handleEvent) {
+          listener.handleEvent(e);
+        } else {
+          listener.call(self,e);
+        }
+      };
+      if (type=="DOMContentLoaded") {
+        var wrapper2=function(e) {
+          if (document.readyState=="complete") {
+            wrapper(e);
+          }
+        };
+        document.attachEvent("onreadystatechange",wrapper2);
+        eventListeners.push({object:this,type:type,listener:listener,wrapper:wrapper2});
+         
+        if (document.readyState=="complete") {
+          var e=new Event();
+          e.srcElement=window;
+          wrapper2(e);
+        }
+      } else {
+        this.attachEvent("on"+type,wrapper);
+        eventListeners.push({object:this,type:type,listener:listener,wrapper:wrapper});
+      }
+    };
+    var removeEventListener=function(type,listener /*, useCapture (will be ignored) */) {
+      var counter=0;
+      while (counter<eventListeners.length) {
+        var eventListener=eventListeners[counter];
+        if (eventListener.object==this && eventListener.type==type && eventListener.listener==listener) {
+          if (type=="DOMContentLoaded") {
+            this.detachEvent("onreadystatechange",eventListener.wrapper);
+          } else {
+            this.detachEvent("on"+type,eventListener.wrapper);
+          }
+          break;
+        }
+        ++counter;
+      }
+    };
+    Element.prototype.addEventListener=addEventListener;
+    Element.prototype.removeEventListener=removeEventListener;
+    if (HTMLDocument) {
+      HTMLDocument.prototype.addEventListener=addEventListener;
+      HTMLDocument.prototype.removeEventListener=removeEventListener;
+    }
+    if (Window) {
+      Window.prototype.addEventListener=addEventListener;
+      Window.prototype.removeEventListener=removeEventListener;
+    }
+  }
+})();
+
 
 var CartoPress = function(map,url){
 	this.url = url || CartoPress.serverUrl;
@@ -310,10 +385,6 @@ CartoPress.GeoJson = OpenLayers.Class(OpenLayers.Format.GeoJSON,{
 	}
 });
 
-CartoPress.SVGRenderer = OpenLayers.Class(OpenLayers.Renderer.SVG,{
-	supported: function(){return true;}
-});
-
 CartoPress.SVGConverter = OpenLayers.Class({
 	initialize: function(){},
 	convert: function(origLayer,bounds){
@@ -326,6 +397,8 @@ CartoPress.SVGConverter = OpenLayers.Class({
 		});
 		map.addLayer(layer);
 		var container = document.createElement('div');
+		
+		this.enableShims();
 		var renderer = new CartoPress.SVGRenderer(container);
 		renderer.map = {
 			getResolution: function(){
@@ -342,14 +415,54 @@ CartoPress.SVGConverter = OpenLayers.Class({
 		
 		renderer.setSize(new OpenLayers.Size(w,h));
 		renderer.setExtent(bounds); // could be used to set extent of printed page?
+		
 		layer.features.forEach(function(feature){
 			renderer.drawFeature(feature);
 		});
+		this.removeShims()
 		var svg = container.firstChild;
-		if(!svg.hasAttribute("xmlns")){
-			svg.setAttribute("xmlns","http://www.w3.org/2000/svg");
-		}
 		return '<?xml version="1.0" encoding="UTF-8" standalone="no"?>'+container.innerHTML;
+	},
+	
+	enableShims: function(){
+		if(!document.createElementNS){
+			this.temporaryShim(document,'createElementNS',this.createElementNSShim);
+		}
+		if(typeof HTMLElement === "undefined"){
+			this.temporaryShim(Element.prototype,'setAttributeNS',this.setAttributeNSShim);
+			this.temporaryShim(Element.prototype,'getAttributeNS',this.getAttributeNSShim);
+		}
+	},
+	
+	removeShims: function(){
+		if(document.createElementNS.restore){
+			document.createElementNS.restore();
+		}
+		if(typeof HTMLElement === "undefined"){
+			Element.prototype.setAttributeNS.restore();
+			Element.prototype.getAttributeNS.restore();
+		}
+	},
+	
+	temporaryShim: function(object,method,shim){
+		var original = object[method];
+		object[method] = shim
+		shim.restore = function(){
+			object.method = original;
+		}
+	},
+	
+	createElementNSShim: function(uri, name) {
+		return document.createElement(name);
+	},
+	
+	setAttributeNSShim: function(ns, name, value){
+		return this.setAttribute(name,value);
+	},
+	
+	getAttributeNSShim: function(ns, name){
+		return this.getAttribute(name);
 	}
+
 });
 
