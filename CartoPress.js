@@ -418,9 +418,63 @@ CartoPress.SVGConverter = OpenLayers.Class({
 		layer.features.forEach(function(feature){
 			renderer.drawFeature(feature);
 		});
-		var svg = container.firstChild;
-		return '<?xml version="1.0" encoding="UTF-8" standalone="no"?>'+container.innerHTML;
+		var svg = container.innerHTML;
+		svg = this.validate(svg);
+		console.log(svg);
+		return '<?xml version="1.0" encoding="UTF-8" standalone="no"?>'+svg;
+	},
+	
+	validate: function(html){
+	
+		var unquotedRegEx = /([\w-.]+)=([\w-.]+)([ >])/g;
+		var openTagRegEx = /(<[\w]+)((?:"(?:[^"\\]|\\")*"|[^">])*)?(>)/g;
+		var attributeRegEx = /(\b[\w]+)\b(="(?:[^"\\]|\\")*")?/g;
+		
+		html = html.replace(unquotedRegEx,function(str,name,value,close){
+			return name + '="' + value + '"' + close;
+		});
+		html = html.replace(openTagRegEx,function(string,open,attributes,close){
+			return open +
+				attributes.replace(attributeRegEx,function(name,value){
+					return name + (value || '=""');
+				})+
+				close;
+		});
+		return html;
 	}
+	
+	getAsString: function(el){
+		var a = this.getAsList(el);
+		return a.join('');
+	},
+	
+	getAsList: function(node){
+		var htmlArray = this.getOpeningTag(node);
+		for(var childIndex = 0; childIndex < node.childNodes.length; childIndex++){
+			htmlArray = htmlArray.concat(this.getAsList(node.childNodes[childIndex]));
+		}
+		htmlArray = htmlArray.concat(this.getClosingTag(node));
+		return htmlArray;
+	},
 
+	getOpeningTag: function(el){
+		var htmlArray = ['<',el.tagName];
+		if(el.attributes){
+			for(var attrIndex = 0, attrCount = el.attributes.length; attrIndex < attrCount; attrIndex++){
+				var attr = el.attributes[attrIndex];
+				htmlArray.push(' ');
+				htmlArray.push(attr.name);
+				htmlArray.push('="');
+				htmlArray.push(attr.value);
+				htmlArray.push('"');
+			}
+		}
+		htmlArray.push('>');
+		return htmlArray;
+	},
+	
+	getClosingTag: function(el){
+		return ["</",el.tagName,">"];
+	}
 });
 
