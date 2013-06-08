@@ -4,7 +4,6 @@
 	var thisDir = thisScript.substr(0,thisScript.lastIndexOf('/'));
 	jsDir = "/js/";
 	jsFiles = [
-		"Shims.js",
 		"CartoPress.js",
 		"SVGRenderer.js",
 		"GeoJson.js",
