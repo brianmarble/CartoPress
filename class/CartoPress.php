@@ -54,6 +54,7 @@ class CartoPress {
 		if($method == 'GET'){
 			if(file_exists($filename)){
 				header("Content-type: application/pdf");
+				header("Content-disposition:attachment; filename=".basename($filename).".pdf");
 				echo file_get_contents($filename);
 			} else {
 				header("HTTP/1.0 404 Not Found");
