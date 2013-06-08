@@ -1,40 +1,18 @@
 'use strict';
 
-var CartoPress = function(map,url){
-	this.url = url;
-	this.request = OpenLayers.Request.XMLHttpRequest;
-	this.json = new OpenLayers.Format.JSON();
-	if(!this.request){
-		throw "CartoPress Error: Unable to create XMLHttpRequest object!"
-	}
-	this.selectPrintAreaControl = new CartoPress.SelectPrintAreaControl();
-	map.addControl(this.selectPrintAreaControl);
-	this.sendAjaxForPageLayouts();
-}
-
-CartoPress.serverUrl = (function(){
-	var scripts = document.getElementsByTagName('script');
-	var script = scripts[scripts.length -1];
-	return script.src.replace(/js/,'php');
-}());
-
-CartoPress.util = {
-	toRatio: function(bounds,ratio){
-		var size = bounds.getSize(),
-			heightDifference = size.w / ratio - size.h,
-			widthDifference = ratio / size.h - size.w,
-			adjustHeight = heightDifference > 0,
-			extendSize = (adjustHeight ? heightDifference : widthDifference)/2,
-			extendSides = adjustHeight ? [3,1] : [2,0],
-			bArray = bounds.toArray();
-		bArray[extendSides[0]] += extendSize;
-		bArray[extendSides[1]] -= extendSize;
-		var newBounds = OpenLayers.Bounds.fromArray(bArray);
-		return newBounds;
+var CartoPress = OpenLayers.Class({
+	
+	initialize: function(map,url){
+		this.url = url;
+		this.request = OpenLayers.Request.XMLHttpRequest;
+		this.json = new OpenLayers.Format.JSON();
+		if(!this.request){
+			throw "CartoPress Error: Unable to create XMLHttpRequest object!"
+		}
+		this.selectPrintAreaControl = new CartoPress.SelectPrintAreaControl();
+		map.addControl(this.selectPrintAreaControl);
+		this.sendAjaxForPageLayouts();
 	},
-}
-
-CartoPress.prototype = {
 	
 	sendAjaxForPageLayouts: function(){
 		var request =  new this.request();
@@ -196,8 +174,13 @@ CartoPress.prototype = {
 		var name = "CartoPress_"+(new Date().getTime());
 		var map = this.selectPrintAreaControl.map;
 		cp.createPdf(map,bounds,this.currentLayout,name,callback);
-	}
-}
+	},
+	
+	
+	CLASS_NAME: "CartoPress"
+});
+
+
 
 
 
