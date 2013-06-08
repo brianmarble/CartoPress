@@ -21,7 +21,7 @@ function __autoload($class){
 /**
  * Creates a CartoPress instance if this file was called directly
  */
-if (__FILE__ == $_SERVER['DOCUMENT_ROOT'].$_SERVER['PHP_SELF']){
+if (__FILE__ == $_SERVER['DOCUMENT_ROOT'].$_SERVER['SCRIPT_NAME']){
   new CartoPress();
 }
 ?>

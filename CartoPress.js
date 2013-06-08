@@ -4,8 +4,12 @@
 	var thisDir = thisScript.substr(0,thisScript.lastIndexOf('/'));
 	jsDir = "/js/";
 	jsFiles = [
+		"Shims.js",
 		"CartoPress.js",
-		"SVGRenderer.js"
+		"SVGRenderer.js",
+		"GeoJson.js",
+		"SVGConverter.js",
+		"SelectPrintAreaControl.js",
 	];
 	var scriptTags = '';
 	for(var i = 0; i < jsFiles.length; i++){
