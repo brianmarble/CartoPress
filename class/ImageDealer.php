@@ -32,7 +32,8 @@ class ImageDealer {
 	}
 	
 	public function addImage($params){
-		$url = $this->url . $this->getQueryString($params);
+		$url = is_array($this->url) ? $this->url[0] : $this->url;
+		$url .= $this->getQueryString($params);
 		$request = new Curl($url);
 		$filename = $this->getFilename();
 		$this->requests[$filename] = $request;
