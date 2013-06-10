@@ -2,8 +2,9 @@
 
 var CartoPress = OpenLayers.Class({
 	
-	initialize: function(map,url){
+	initialize: function(map,url,queryParams){
 		this.url = url;
+		this.queryParams = queryParams;
 		this.request = OpenLayers.Request.XMLHttpRequest;
 		this.json = new OpenLayers.Format.JSON();
 		if(!this.request){
@@ -16,7 +17,7 @@ var CartoPress = OpenLayers.Class({
 	
 	sendAjaxForPageLayouts: function(){
 		var request =  new this.request();
-		request.open('GET',this.url+'/formats');
+		request.open('GET',this.url+'/formats'+this.getQueryString());
 		request.setRequestHeader('Accept','application/json');
 		request.onreadystatechange = this.recieveLayouts.bind(this);
 		request.send();
@@ -80,7 +81,7 @@ var CartoPress = OpenLayers.Class({
 		}
 		
 		var request =  new this.request();
-		request.open('POST',this.url+'/pdfs/'+id+'.pdf');
+		request.open('POST',this.url+'/pdfs/'+id+'.pdf'+this.getQueryString());
 		request._cp_callback = callback;
 		request.setRequestHeader('Content-type','application/json');
 		request.setRequestHeader('Accept','application/json');
@@ -95,7 +96,7 @@ var CartoPress = OpenLayers.Class({
 				var data = this.json.read(request.responseText);
 				if(request._cp_callback instanceof Function){
 					if(request.status == 201){
-						request._cp_callback(this.url+"/pdfs/"+data.url);
+						request._cp_callback(this.url+"/pdfs/"+data.url+this.getQueryString());
 					} else {
 						request._cp_callback(false);
 					}
@@ -181,6 +182,18 @@ var CartoPress = OpenLayers.Class({
 			var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
 			return v.toString(16);
 		});
+	},
+	
+	getQueryString: function(){
+		if(this.queryParams){
+			var params = [];
+			for(var p in this.queryParams)if(this.queryParams.hasOwnProperty(p)){
+				params.push(encodeURIComponent(p)+'='+encodeURIComponent(this.queryParams[p]));
+			}
+			return '?'+params.join('&');
+		} else {
+			return '';
+		}
 	},
 	
 	CLASS_NAME: "CartoPress"

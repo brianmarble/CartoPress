@@ -22,7 +22,7 @@ class Config {
 	}
 	
 	private function __construct(){
-		$configFileLines = explode("\n",file_get_contents(self::CONFIG_FILENAME));
+		$configFileLines = explode("\n",$this->getFile());
 		$currentSection = 'initial';
 		foreach($configFileLines as $line){
 			$strippedLine = trim(preg_replace(self::COMMENT_REGEX,'',$line));
@@ -69,6 +69,14 @@ class Config {
 			preg_match(self::LAYOUT_REGEX,$line,$matches);
 			$this->pageLayouts[trim($matches[1])] = trim($matches[2]);
 		}
+	}
+	
+	private function getFile(){
+		$path = dirname(__file__);
+		if(!file_exists($path.'/'.self::CONFIG_FILENAME)){
+			$path = dirname($path);
+		}
+		return file_get_contents($path.'/'.self::CONFIG_FILENAME);
 	}
 }
 

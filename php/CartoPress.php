@@ -22,14 +22,12 @@ class CartoPress {
 		} else if ($request[0] == 'pdfs' && count($request) == 2){
 			$this->handlePdf($request);
 		} else {
-			if(false)header("HTTP/1.0 404 Not Found");
+			if(false)http_response_code(404);
 			else {
 				header("Content-type: text/plain");
 				var_dump($_SERVER,$request);
 			}
 		}
-		die();
-		
 	}
 	
 	private function outputFormatList(){
@@ -57,7 +55,7 @@ class CartoPress {
 				header("Content-disposition:attachment; filename=".basename($filename).".pdf");
 				echo file_get_contents($filename);
 			} else {
-				header("HTTP/1.0 404 Not Found");
+				http_response_code(404);
 			}
 		} else if ($method == 'POST'){
 			if($_SERVER['CONTENT_TYPE'] == 'application/json'){
@@ -65,25 +63,24 @@ class CartoPress {
 				
 				$pdf = new PDFBuilder($data);
 				if($pdf && $pdf->saveTo($filename)){
-					header("HTTP/1.0 201 Created");
+					http_response_code(201);
 					header("Content-type: application/json");
 					echo json_encode(array("url"=>$request[1]));
 				} else {
-					header("HTTP/1.0 200 Created");
 					header("Content-type: application/json");
 					echo json_encode(array("success"=>false));
 				}
 			} else {
-				header("HTTP/1.0 415 Unsupported Media Type");
+				http_response_code(415);
 			}
 		} else {
-			header("HTTP/1.0 405 Method Not Allowed");
+			http_response_code(405);
 			header("Allow: GET POST");
 		}
 	}
 	
 	private function getRestRequest(){
-		$relavantURI = str_replace($_SERVER['SCRIPT_NAME'],'',$_SERVER['REQUEST_URI']);
+		$relavantURI = $_SERVER['PATH_INFO'];//str_replace($_SERVER['SCRIPT_NAME'],'',$_SERVER['REQUEST_URI']);
 		$relavantURI = trim($relavantURI,' /');
 		$requestData = explode('/',$relavantURI);
 		return $requestData;
