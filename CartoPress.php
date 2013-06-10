@@ -5,7 +5,7 @@
  */
 function __autoload($class){
 	$filenames = array(
-		dirname(__FILE__) ."/class/$class.php",
+		dirname(__FILE__) ."/php/$class.php",
 		dirname(__FILE__) ."/tcpdf/".strtolower($class).".php"
 	);
 	foreach($filenames as $filename){
