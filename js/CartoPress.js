@@ -60,7 +60,7 @@ var CartoPress = OpenLayers.Class({
 		document.body.insertBefore(div,document.body.firstChild);
 	},
 
-	createPdf: function(map,bounds,format,id,callback){
+	createPdf: function(map,bounds,format,callback){
 		var data = {
 			bounds: bounds,
 			projection: map.getProjection(),
@@ -81,7 +81,7 @@ var CartoPress = OpenLayers.Class({
 		}
 		
 		var request =  new this.request();
-		request.open('POST',this.url+'/pdfs/'+id+'.pdf'+this.getQueryString());
+		request.open('POST',this.url+'/pdfs/create'+this.getQueryString());
 		request._cp_callback = callback;
 		request.setRequestHeader('Content-type','application/json');
 		request.setRequestHeader('Accept','application/json');
@@ -172,16 +172,8 @@ var CartoPress = OpenLayers.Class({
 	print: function(callback){
 		var bounds = this.selectPrintAreaControl.getBounds();
 		this.selectPrintAreaControl.deactivate();
-		var name = this.uuid();//"CartoPress_"+(new Date().getTime());
 		var map = this.selectPrintAreaControl.map;
-		this.createPdf(map,bounds,this.currentLayout,name,callback);
-	},
-	
-	uuid: function(){
-		return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-			var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
-			return v.toString(16);
-		});
+		this.createPdf(map,bounds,this.currentLayout,callback);
 	},
 	
 	getQueryString: function(){
