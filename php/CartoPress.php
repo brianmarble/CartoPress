@@ -9,10 +9,13 @@
  * POST /pdfs/create      create a pdf
  * GET  /pdfs/{id}        retrieve the pdf with the given id
  */
+ 
+ include_once "Shim.php";
+ 
 class CartoPress {
 	
 	public function __construct(){
-
+		set_time_limit(60*5);
 		$request = $this->getRestRequest();
 
 		if(count($request) == 1 && empty($request[0])){
