@@ -2,65 +2,71 @@
 
 var CartoPress = OpenLayers.Class({
 	
-	initialize: function(map,url,queryParams){
-		this.url = url;
-		this.queryParams = queryParams;
-		this.request = OpenLayers.Request.XMLHttpRequest;
-		this.json = new OpenLayers.Format.JSON();
-		if(!this.request){
-			throw "CartoPress Error: Unable to create XMLHttpRequest object!"
-		}
-		this.selectPrintAreaControl = new CartoPress.SelectPrintAreaControl();
-		map.addControl(this.selectPrintAreaControl);
-		this.sendAjaxForPageLayouts();
+	activate: function(){
+		this._selectPrintAreaControl.activate();
 	},
 	
-	sendAjaxForPageLayouts: function(){
-		var request =  new this.request();
-		request.open('GET',this.url+'/formats'+this.getQueryString());
-		request.setRequestHeader('Accept','application/json');
-		request.onreadystatechange = this.recieveLayouts.bind(this);
-		request.send();
+	deactivate: function(){
+		this._selectPrintAreaControl.deactivate();
 	},
 	
 	getPageLayouts: function(callback){
-		if(this.pageLayouts){
+		if(this._pageLayouts){
 			var returnArray = [];
-			for(var i = 0; i < this.pageLayouts.length; i++){
-				returnArray.push(this.pageLayouts[i].name);
+			for(var i = 0; i < this._pageLayouts.length; i++){
+				returnArray.push(this._pageLayouts[i].name);
 			}
 			callback(returnArray);
 		} else {
-			this.pageLayoutsCallback = callback;
-		}
-	},
-
-	recieveLayouts: function(event){
-		var request = event.target;
-		if(request.readyState == 4){
-			try {
-				this.pageLayouts = this.json.read(request.responseText);
-			} catch(e){
-				if(e instanceof SyntaxError){
-					this.outputSyntaxError(request.responseText);
-					return;
-				} else {
-					throw e;
-				}
-			}
-			if(this.pageLayoutsCallback instanceof Function){
-				this.getPageLayouts(this.pageLayoutsCallback);
-			}
+			this._pageLayoutsCallback = callback;
 		}
 	},
 	
-	outputSyntaxError: function(errorText){
+	setPageLayout: function(layout){
+		for(var i = 0; i < this._pageLayouts.length; i++){
+			if(this._pageLayouts[i].name === layout){
+				this._currentLayout = layout;
+				this._selectPrintAreaControl.setRatio(
+					+this._pageLayouts[i].ratio
+				);
+				return;
+			}
+		}
+		throw "Layout "+layout+" not found!";
+	},
+	
+	print: function(callback){
+		var bounds = this._selectPrintAreaControl.getBounds();
+		this._selectPrintAreaControl.deactivate();
+		var map = this._selectPrintAreaControl.map;
+		this._createPdf(map,bounds,this._currentLayout,callback);
+	},
+	
+	initialize: function(map,url,queryParams){
+		this._baseUrl = url;
+		this._queryParams = queryParams;
+		this._selectPrintAreaControl = new CartoPress.SelectPrintAreaControl();
+		map.addControl(this._selectPrintAreaControl);
+		this._sendAjaxForPageLayouts();
+	},
+	
+	_sendAjaxForPageLayouts: function(){
+		this._ajax('GET','/formats',null,function(data){
+			this._pageLayouts = data;
+			if(this._pageLayoutsCallback instanceof Function){
+				this.getPageLayouts(this._pageLayoutsCallback);
+			}
+		}.bind(this));
+	},
+	
+	/*TODO remove*/
+	_outputSyntaxError: function(errorText){
 		var div = document.createElement('div');
 		div.innerHTML = errorText;
 		document.body.insertBefore(div,document.body.firstChild);
 	},
 
-	createPdf: function(map,bounds,format,callback){
+	_createPdf: function(map,bounds,format,callback){
 		var data = {
 			bounds: bounds,
 			projection: map.getProjection(),
@@ -72,51 +78,26 @@ var CartoPress = OpenLayers.Class({
 			var layer = layers[i];
 			var type = undefined;
 			if(layer instanceof OpenLayers.Layer.WMS){
-				data.layers.push(this.getWmsSpec(layer));
+				data.layers.push(this._getWmsSpec(layer));
 			} else if (layer instanceof OpenLayers.Layer.Vector){
-				data.layers.push(this.getVectorSpec(layer,bounds));
+				data.layers.push(this._getVectorSpec(layer,bounds));
 			} else {
 				console.log("Not printing layer: "+layer.name);
 			}
 		}
 		
-		var request =  new this.request();
-		request.open('POST',this.url+'/pdfs/create'+this.getQueryString());
-		request._cp_callback = callback;
-		request.setRequestHeader('Content-type','application/json');
-		request.setRequestHeader('Accept','application/json');
-		request.onreadystatechange = this.handleCreatePdfResponse.bind(this);
-		request.send(this.json.write(data));
-	},
-
-	handleCreatePdfResponse: function(event){
-		var request = event.target;
-		if(request.readyState == 4){
-			try {
-				var data = this.json.read(request.responseText);
-				if(request._cp_callback instanceof Function){
-					if(request.status == 201){
-						request._cp_callback(this.url+"/pdfs/"+data.url+this.getQueryString());
+		this._ajax('POST','/pdfs/create',data,function(data,status){
+				if(callback instanceof Function){
+					if(status == 201){
+						callback(this._baseUrl+"/pdfs/"+data.url+this._getQueryString());
 					} else {
-						request._cp_callback(false);
+						callback(false);
 					}
-					
 				}
-			} catch(e){
-				if(e instanceof SyntaxError){
-					this.outputSyntaxError(request.responseText);
-					if(request._cp_callback instanceof Function){
-						request._cp_callback(false);
-					}
-					return;
-				} else {
-					throw e;
-				}
-			}
-		}
+		}.bind(this));
 	},
 
-	getWmsSpec: function(layer){
+	_getWmsSpec: function(layer){
 		return {
 			name: layer.name,
 			type: 'wms',
@@ -125,7 +106,7 @@ var CartoPress = OpenLayers.Class({
 		}
 	},
 
-	getVectorSpec: function(layer,bounds){
+	_getVectorSpec: function(layer,bounds){
 		var svgc = new CartoPress.SVGConverter();
 		var svg = svgc.convert(layer,bounds);
 		return {
@@ -135,52 +116,11 @@ var CartoPress = OpenLayers.Class({
 		}
 	},
 	
-	getFeaturesInBounds: function(features,bounds){
-		var returnSet = [];
-		var feature, fbounds;
-		for(var i = 0; i < features.length; i++){
-			feature = features[i];
-			fbounds = feature.geometry.getBounds();
-			if(bounds.intersectsBounds(fbounds)){
-				returnSet.push(feature);
-			}
-		}
-		return returnSet;
-	},
-	
-	setPageLayout: function(layout){
-		for(var i = 0; i < this.pageLayouts.length; i++){
-			if(this.pageLayouts[i].name === layout){
-				this.currentLayout = layout;
-				this.selectPrintAreaControl.setRatio(
-					+this.pageLayouts[i].ratio
-				);
-				return;
-			}
-		}
-		throw "Layout "+layout+" not found!";
-	},
-	
-	activate: function(){
-		this.selectPrintAreaControl.activate();
-	},
-	
-	deactivate: function(){
-		this.selectPrintAreaControl.deactivate();
-	},
-	
-	print: function(callback){
-		var bounds = this.selectPrintAreaControl.getBounds();
-		this.selectPrintAreaControl.deactivate();
-		var map = this.selectPrintAreaControl.map;
-		this.createPdf(map,bounds,this.currentLayout,callback);
-	},
-	
-	getQueryString: function(){
-		if(this.queryParams){
+	_getQueryString: function(){
+		if(this._queryParams){
 			var params = [];
-			for(var p in this.queryParams)if(this.queryParams.hasOwnProperty(p)){
-				params.push(encodeURIComponent(p)+'='+encodeURIComponent(this.queryParams[p]));
+			for(var p in this._queryParams)if(this._queryParams.hasOwnProperty(p)){
+				params.push(encodeURIComponent(p)+'='+encodeURIComponent(this._queryParams[p]));
 			}
 			return '?'+params.join('&');
 		} else {
@@ -188,8 +128,33 @@ var CartoPress = OpenLayers.Class({
 		}
 	},
 	
+	_ajax: function(method,path,requestData,callback){
+		var request = new OpenLayers.Request.XMLHttpRequest(),
+			json = new OpenLayers.Format.JSON();
+		request.open(method,this._baseUrl+path+this._getQueryString());
+		request.setRequestHeader('Accept','application/json');
+		if(requestData)request.setRequestHeader('Content-type','application/json');
+		request.onreadystatechange = function(){
+			if(request.readyState == 4){
+				try {					
+					var responseData = json.read(request.responseText);
+				} catch(e){
+					if(e instanceof SyntaxError){
+						this._outputSyntaxError(request.responseText);
+						return;
+					} else {
+						throw e;
+					}
+				}
+				callback(responseData,request.status);
+			}
+		}.bind(this);
+		request.send(json.write(requestData));
+	},
+	
 	CLASS_NAME: "CartoPress"
 });
+
 
 
 

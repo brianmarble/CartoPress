@@ -6,7 +6,6 @@
 	jsFiles = [
 		"CartoPress.js",
 		"SVGRenderer.js",
-		"GeoJson.js",
 		"SVGConverter.js",
 		"SelectPrintAreaControl.js",
 	];
