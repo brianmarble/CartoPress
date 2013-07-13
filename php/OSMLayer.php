@@ -19,25 +19,24 @@ class OSMLayer extends Layer {
 	*/
 	private $pageLayout;
 	
+	/*
+	 * @var OsmGridInfo
+	 */
+	private $grid;
+	
 	public function __construct($layer, PageLayout $pageLayout,$bounds,$zoom){
+		
 		parent::__construct($layer);
-		$llb = $layer->lonLatBounds;
-		
-		$topLeft = OsmTile::createFromLonLatZoom($llb->left,$llb->top,$zoom);
-		$bottomRight = OsmTile::createFromLonLatZoom($llb->right,$llb->bottom,$zoom);
-		
-		$rowCount = $bottomRight->y - $topLeft->y + 1;
-		$colCount = $bottomRight->x - $topLeft->x + 1;
+		$this->pageLayout = $pageLayout;
+		$this->grid = $grid = new OsmGridInfo($layer, $zoom);
 		
 
-		$this->pageLayout = $pageLayout;
 		$layer->params->FORMAT = 'image/png';
 		$imageDealer = new ImageDealer($layer->url,$layer->params);
 		
 		$images = array();
-		
-		for($row = $topLeft->y; $row <= $bottomRight->y; $row++){
-			for($col = $topLeft->x; $col <= $bottomRight->x; $col++){
+		for($row = $grid->firstRowNumber; $row <= $grid->lastRowNumber; $row++){
+			for($col = $grid->firstColNumber; $col <= $grid->lastColNumber; $col++){
 				$images[] = $imageDealer->addImage(array(
 					'${z}' => $zoom, 
 					'${x}' => $col, 
@@ -46,21 +45,30 @@ class OSMLayer extends Layer {
 			}
 		}
 		$imageDealer->getImages();
-		$this->rowCount = $rowCount;
-		$this->colCount = $colCount;
 		$this->images = $images;
-		$this->bottomRight = $bottomRight;
-		$this->topLeft = $topLeft;
-	}
-
-	function drawLayer($pdf){
 		
+	}
+	
+	function drawLayer($pdf){
+
+				
+		$filename = $this->combineTiles();
+		
+		$cfg = Config::getInstance();
+		$pageLayout = $this->pageLayout;
+		$pdf->Image($filename,$cfg->margin,$cfg->margin+$cfg->headerSize,$pageLayout->getMapWidth('in'),$pageLayout->getMapHeight('in'));
+		
+	}
+	
+	function combineTiles(){
+		$grid = $this->grid;
+			
 		$im = new Imagick();
 		$nextImage = 0;
 						
-		for($row = 0; $row < $this->rowCount; $row++){
+		for($row = 0; $row < $grid->rowCount; $row++){
 			$imRow = new Imagick(); 
-			for($col = 0; $col < $this->colCount; $col++)
+			for($col = 0; $col < $grid->colCount; $col++)
 			{
 				$imRow->readimage($this->images[$nextImage++]);
 			}
@@ -73,39 +81,14 @@ class OSMLayer extends Layer {
 		/* @var Imagick */
 		$im2 = $im->appendimages(true);
 				
-		$imageWidth = 256 * $this->colCount - $this->topLeft->xOffset - (256 - $this->bottomRight->xOffset);
-		$imageHeight = 256 * $this->rowCount - $this->topLeft->yOffset - (256 - $this->bottomRight->yOffset);
-		var_dump($imageWidth, $imageHeight, $this->topLeft->xOffset, $this->topLeft->yOffset);
-		$im2->cropimage($imageWidth, $imageHeight, $this->topLeft->xOffset, $this->topLeft->yOffset);
+		$im2->cropimage($grid->width, $grid->height, $grid->leftOffset, $grid->topOffset);
 
-		$filename = ImageDealer::getFilename();
+		$filename = "/tmp/tmp.png"; //ImageDealer::getFilename();
 		
-		$im2->writeimage("/tmp/tmp.png");
-		
-		$cfg = Config::getInstance();
-		$pageLayout = $this->pageLayout;
-		$pdf->Image("/tmp/tmp.png",$cfg->margin,$cfg->margin+$cfg->headerSize,$pageLayout->getMapWidth('in'),$pageLayout->getMapHeight('in'));
-		
-	}
-	
-	function combineTiles(){
-		$im = new Imagick();
-		$nextImage = 0;
-		
-		for($row = 0; $row < $this->rowCount; $row++){
-			$imRow = new Imagick();
-			for($col = 0; $col < $this->colCount; $col++)
-			{
-			$imRow->readimage($this->images[$nextImage++]);
-			}
-			$imRow->resetiterator();
-			$imRow = $imRow->appendImages(false);
-			$im->addimage($imRow);
-		}
-		$im->resetiterator();
-		$im = $im->appendimages(true);
-		$im->writeimage("/tmp/tmp.png");
+		$im2->writeimage($filename);
+		return $filename;
 	}
 }
+
 
 ?>
