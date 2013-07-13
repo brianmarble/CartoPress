@@ -8,7 +8,6 @@
  */
 class ImageDealer {
 
-
 	private $url;
 	private $dir;
 	private $requests;
@@ -31,11 +30,15 @@ class ImageDealer {
 		if(!is_dir($dir))mkdir($dir,0777,true);
 	}
 	
-	public function addImage($params){
+	public function addImage($params,$areUrlParams=false){
 		$url = is_array($this->url) ? $this->url[0] : $this->url;
-		$url .= $this->getQueryString($params);
+		if($areUrlParams){
+			$url = $this->insertParamsIntoUrl($url,$params);
+		} else {
+			$url .= $this->getQueryString($params);
+		}
 		$request = new Curl($url);
-		$filename = $this->getFilename();
+		$filename = self::getFilename();
 		$this->requests[$filename] = $request;
 		return $filename;
 	}
@@ -63,9 +66,16 @@ class ImageDealer {
 		return '?'.implode('&',$flatParams);
 	}
 	
-	private function getFilename(){
-		$cfg = Config::getInstance(); 
-		return $cfg->imgDir . '/' . $this->unique . '_' . $this->counter++ . '.png';
+	public static function getFilename(){
+		$cfg = Config::getInstance();
+		return sprintf("%s/%s.png",$cfg->imgDir,uniqid());
+	}
+	
+	private function insertParamsIntoUrl($url,$params){
+		foreach(array_keys($params) as $param){
+			$url = str_replace($param, $params[$param], $url);
+		}
+		return $url;
 	}
 }
 

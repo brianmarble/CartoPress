@@ -21,7 +21,7 @@ class PDFBuilder {
 		
 		$layers = $spec->layers;
 		foreach($layers as $layer){
-			$layer = $this->getLayerInstance($layer,$pageLayout,$bounds);
+			$layer = $this->getLayerInstance($layer,$pageLayout,$bounds,$spec->zoom);
 			$pdf->drawMapLayer($layer);
 		}
 		
@@ -35,13 +35,15 @@ class PDFBuilder {
 		return file_exists($filename);
 	}
 	
-	private function getLayerInstance($layer,$pageLayout,$bounds){
+	private function getLayerInstance($layer,$pageLayout,$bounds,$zoom){
 		if($layer->type == 'wms'){
 			return new WMSLayer($layer,$pageLayout,$bounds);
 		} else if ($layer->type == 'vector'){
 			return new VectorLayer($layer,$pageLayout,$bounds);
 		} else if ($layer->type == 'svg'){
 			return new SVGLayer($layer,$pageLayout,$bounds);
+		} else if ($layer->type == 'osm'){
+			return new OSMLayer($layer,$pageLayout,$bounds,$zoom);
 		} else {
 			throw new CartoPressException("Layer type not found: $layer->type");
 		}

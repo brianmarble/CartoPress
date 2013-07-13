@@ -69,6 +69,7 @@ var CartoPress = OpenLayers.Class({
 	_createPdf: function(map,bounds,format,callback){
 		var data = {
 			bounds: bounds,
+			zoom: map.getZoom(),
 			projection: map.getProjection(),
 			layout: typeof format == "string" ? format : format.name,
 			layers: []
@@ -81,8 +82,10 @@ var CartoPress = OpenLayers.Class({
 				data.layers.push(this._getWmsSpec(layer));
 			} else if (layer instanceof OpenLayers.Layer.Vector){
 				data.layers.push(this._getVectorSpec(layer,bounds));
+			} else if (layer instanceof OpenLayers.Layer.OSM){
+				data.layers.push(new CartoPress.OSM().getSpec(layer,bounds));
 			} else {
-				console.log("Not printing layer: "+layer.name);
+				console.log("Not printing layer: "+layer.name,layer);
 			}
 		}
 		
