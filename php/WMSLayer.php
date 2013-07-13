@@ -21,7 +21,10 @@ class WMSLayer extends Layer{
 	protected function drawLayer($pdf){
 		$cfg = Config::getInstance();
 		$pageLayout = $this->pageLayout;
+		$level = error_reporting();
+		error_reporting(0);
 		$pdf->Image($this->filename,$cfg->margin,$cfg->margin+$cfg->headerSize,$pageLayout->getMapWidth('in'),$pageLayout->getMapHeight('in'));
+		error_reporting($level);
 	}
 }
 

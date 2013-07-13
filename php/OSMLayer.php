@@ -28,7 +28,7 @@ class OSMLayer extends Layer {
 		
 		parent::__construct($layer);
 		$this->pageLayout = $pageLayout;
-		$this->grid = $grid = new OsmGridInfo($layer, $zoom);
+		$this->grid = $grid = $this->getGrid($layer,$zoom);
 		
 
 		$layer->params->FORMAT = 'image/png';
@@ -48,6 +48,19 @@ class OSMLayer extends Layer {
 		$this->images = $images;
 		
 	}
+	
+	private function getGrid($layer,&$zoom){
+		$tagetPixelWidth = $this->pageLayout->getMapWidth('pixel');
+		$targetTileWidth = floor(($tagetPixelWidth / 256)) + 1;
+		
+		$tempZoom = 0;		
+		do {
+			$tempZoom++;
+			$grid = new OsmGridInfo($layer, $tempZoom);			
+		} while ($grid->colCount < $targetTileWidth);
+		$zoom = $tempZoom;
+		return $grid;		
+	} 
 	
 	function drawLayer($pdf){
 
