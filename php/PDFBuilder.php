@@ -65,6 +65,12 @@ class PDFBuilder {
 			throw new CartoPressException("Invalid Bounds given in spec");
 		}
 		
+		if(!isset($spec->title)){
+			$spec->title = '';			
+		}
+		if(!isset($spec->comments)){
+			$spec->comments = '';
+		}
 	}
 }
 
