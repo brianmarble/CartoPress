@@ -17,7 +17,7 @@ class PDFBuilder {
 		$pdf = new MapPDF('P','in',$pageLayout->getTcpdfName());
 		$pdf->AddPage();
 		
-		//$pdf->Cell(0,0,"Hello World!",0,1,"C", 0, '', 0, false, 'T', 'M');
+		$pdf->Cell(0,0,$spec->title,0,1,"C", 0, '', 0, false, 'T', 'M');
 		
 		$layers = $spec->layers;
 		foreach($layers as $layer){
