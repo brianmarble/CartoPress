@@ -17,9 +17,9 @@ class PDFBuilder {
 		$pdf = new MapPDF('P','in',$pageLayout->getTcpdfName());
 		$margin = $pageLayout->getMargin();
 		$pdf->SetMargins($margin, $margin, $margin, true);
-		$pdf->setPageOrientation('P',false,$margin);
+		$pdf->setPageOrientation('P',true,$margin);
 		$pdf->AddPage();
-		
+		$pdf->SetFontSize(24);
 		$pdf->Cell(0,0,$spec->title,0,1,"C", 0, '', 0, false, 'T', 'M');
 		
 		$layers = $spec->layers;
@@ -27,6 +27,9 @@ class PDFBuilder {
 			$layer = $this->getLayerInstance($layer,$pageLayout,$bounds,$spec->zoom);
 			$pdf->drawMapLayer($layer);
 		}
+		$pdf->SetY($pageLayout->getCommentsYPosition(),true);
+		$pdf->SetFontSize(12);
+		$pdf->Write(0,$spec->comments);
 		
 		$this->pdf = $pdf;
 	}
