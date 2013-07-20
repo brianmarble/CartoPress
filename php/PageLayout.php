@@ -25,6 +25,11 @@ class PageLayout {
 		$this->mapHeightInch = $this->pageHeightInch - $heightMargins;
 		$this->dpi = $cfg->dpi;
 	}
+	public function getMargin(){
+		$cfg = Config::getInstance();
+		return $cfg->margin;
+	}
+	
 	
 	public function getPageWidth($unit='in'){
 		if($unit == 'in'){

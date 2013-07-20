@@ -15,6 +15,9 @@ class PDFBuilder {
 		
 		
 		$pdf = new MapPDF('P','in',$pageLayout->getTcpdfName());
+		$margin = $pageLayout->getMargin();
+		$pdf->SetMargins($margin, $margin, $margin, true);
+		$pdf->setPageOrientation('P',false,$margin);
 		$pdf->AddPage();
 		
 		$pdf->Cell(0,0,$spec->title,0,1,"C", 0, '', 0, false, 'T', 'M');
