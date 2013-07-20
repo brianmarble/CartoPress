@@ -72,7 +72,9 @@ var CartoPress = OpenLayers.Class({
 			zoom: map.getZoom(),
 			projection: map.getProjection(),
 			layout: typeof format == "string" ? format : format.name,
-			layers: []
+			layers: [],
+			title: this._title,
+			comments: this._comments
 		}
 		var layers = map.getLayersBy('visibility',true);
 		for(var i = 0; i < layers.length; i++){
@@ -98,6 +100,14 @@ var CartoPress = OpenLayers.Class({
 					}
 				}
 		}.bind(this));
+	},
+	
+	setTitle: function(title){
+		this._title = title;
+	},
+
+	setComments: function(comments){
+		this._comments = comments;
 	},
 
 	_getWmsSpec: function(layer){
