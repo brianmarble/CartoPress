@@ -22,6 +22,9 @@ function __autoload($class){
  * Creates a CartoPress instance if this file was called directly
  */
 if (__FILE__ == $_SERVER['DOCUMENT_ROOT'].$_SERVER['SCRIPT_NAME']){
-  new CartoPress();
+	$cfg = Config::getInstance();
+	if(!isset($cfg->blockDirect) || $cfg->blockDirect == 'false'){
+		new CartoPress();
+	}
 }
 ?>
