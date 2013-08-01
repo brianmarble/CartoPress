@@ -20,6 +20,8 @@ class ImageDealer {
 		
 		$cfg = Config::getInstance(); 
 		
+		$this->securityCheck($cfg,$url);
+		
 		$this->url = $url;
 		$this->dir = $cfg->imgDir;
 		$this->requests = array();
@@ -76,6 +78,18 @@ class ImageDealer {
 			$url = str_replace($param, $params[$param], $url);
 		}
 		return $url;
+	}
+	
+	private function securityCheck($cfg,$urls){
+		if(!is_array($urls)){
+			$urls = array($urls);
+		}
+		foreach($urls as $url){
+			$urlArray = parse_url($url);
+			if(!array_search($urlArray['host'],$cfg->hosts,true)){
+				throw new CartoPressException("Forbidden Host");	
+			}
+		}
 	}
 }
 
