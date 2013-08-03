@@ -39,7 +39,7 @@ class CartoPress {
 		$cfg = Config::getInstance();
 		$data = array();
 		foreach($cfg->pageLayouts as $displayName => $tcpdfName){
-			$portaitLayout = new PageLayout($displayName,'portait');
+			$portaitLayout = new PageLayout($displayName,'portrait');
 			$landscapeLayout = new PageLayout($displayName,'landscape');
 			$data[] = array(
 				'name' => $portaitLayout->getDisplayName(),
