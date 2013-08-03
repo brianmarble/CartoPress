@@ -8,16 +8,15 @@ class PDFBuilder {
 		
 		$this->validatePdfSpecs($spec);
 		
-		$pageLayout = new PageLayout($spec->layout);
+		$pageLayout = new PageLayout($spec->layout,$spec->orientation);
 		$bounds = $spec->bounds;
-		$landscape = ($bounds->top - $bounds->bottom) < ($bounds->right - $bounds->left);
+		$orienation = $spec->orientation == 'portrait' ? 'P' : 'L';
 		
 		
-		
-		$pdf = new MapPDF('P','in',$pageLayout->getTcpdfName());
+		$pdf = new MapPDF($orienation,'in',$pageLayout->getTcpdfName());
 		$margin = $pageLayout->getMargin();
 		$pdf->SetMargins($margin, $margin, $margin, true);
-		$pdf->setPageOrientation('P',true,$margin);
+		$pdf->setPageOrientation($orienation,true,$margin);
 		$pdf->AddPage();
 		$pdf->SetFontSize(24);
 		$pdf->Cell(0,0,$spec->title,0,1,"C", 0, '', 0, false, 'T', 'M');
@@ -56,7 +55,7 @@ class PDFBuilder {
 	}
 	
 	private function validatePdfSpecs($spec){
-		$pageLayout = new PageLayout($spec->layout);
+		$pageLayout = new PageLayout($spec->layout,$spec->orientation);
 		$layoutRatio = $pageLayout->getMapRatio();
 		$bounds = $spec->bounds;
 		$specWidth = $bounds->right - $bounds->left;

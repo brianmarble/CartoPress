@@ -22,12 +22,14 @@ var CartoPress = OpenLayers.Class({
 		}
 	},
 	
-	setPageLayout: function(layout){
+	setPageLayout: function(layout,landscape){
 		for(var i = 0; i < this._pageLayouts.length; i++){
 			if(this._pageLayouts[i].name === layout){
 				this._currentLayout = layout;
+				this._currentLandscape = landscape;
+				var ratio = +this._pageLayouts[i].ratio[landscape?'landscape':'portrait'];
 				this._selectPrintAreaControl.setRatio(
-					+this._pageLayouts[i].ratio
+					ratio
 				);
 				return;
 			}
@@ -36,10 +38,11 @@ var CartoPress = OpenLayers.Class({
 	},
 	
 	print: function(callback){
-		var bounds = this._selectPrintAreaControl.getBounds();
+		var bounds = this._selectPrintAreaControl.getBounds(),
+			map = this._selectPrintAreaControl.map,
+			orientation = this._currentLandscape ? 'landscape' : 'portrait';
 		this._selectPrintAreaControl.deactivate();
-		var map = this._selectPrintAreaControl.map;
-		this._createPdf(map,bounds,this._currentLayout,callback);
+		this._createPdf(map,bounds,this._currentLayout,orientation,callback);
 	},
 	
 	initialize: function(map,url,queryParams){
@@ -66,12 +69,13 @@ var CartoPress = OpenLayers.Class({
 		document.body.insertBefore(div,document.body.firstChild);
 	},
 
-	_createPdf: function(map,bounds,format,callback){
+	_createPdf: function(map,bounds,format,orientation,callback){
 		var data = {
 			bounds: bounds,
 			zoom: map.getZoom(),
 			projection: map.getProjection(),
 			layout: typeof format == "string" ? format : format.name,
+			orientation: orientation,
 			layers: [],
 			title: this._title,
 			comments: this._comments

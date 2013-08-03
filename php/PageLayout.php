@@ -11,14 +11,24 @@ class PageLayout {
 	private $mapHeightInch;
 	private $dpi;
 
-	public function __construct($displayName){
+	public function __construct($displayName,$orientation){
 		$cfg = Config::getInstance();
 		$this->displayName = $displayName;
 		$this->tcpdfName = $cfg->pageLayouts[$displayName];
 		$pageSizeInPoints = MapPDF::getPageSize($this->tcpdfName);
 		$pointsPerInch = 72;
+		
 		$this->pageWidthInch = $pageSizeInPoints[0] / $pointsPerInch;
 		$this->pageHeightInch = $pageSizeInPoints[1] / $pointsPerInch;
+		
+		if($orientation == 'landscape'){
+			$swap = $this->pageHeightInch;
+			$this->pageHeightInch = $this->pageWidthInch;
+			$this->pageWidthInch = $swap;
+		} else if ($orientation != 'portait'){
+			throw new CartoPressException("Invalid page orientation: $orientation");
+		}
+		
 		$widthMargins = $cfg->margin * 2;
 		$heightMargins = $widthMargins + $cfg->headerSize + $cfg->footerSize;
 		$this->mapWidthInch = $this->pageWidthInch - $widthMargins;
