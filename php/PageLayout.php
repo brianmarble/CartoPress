@@ -25,7 +25,7 @@ class PageLayout {
 			$swap = $this->pageHeightInch;
 			$this->pageHeightInch = $this->pageWidthInch;
 			$this->pageWidthInch = $swap;
-		} else if ($orientation != 'portait'){
+		} else if ($orientation != 'portrait'){
 			throw new CartoPressException("Invalid page orientation: $orientation");
 		}
 		
