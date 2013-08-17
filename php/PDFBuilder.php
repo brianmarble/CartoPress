@@ -30,7 +30,20 @@ class PDFBuilder {
 		$pdf->SetFontSize(12);
 		$pdf->Write(0,$spec->comments);
 		
+		$this->drawLogo($pdf,$pageLayout);
+		
 		$this->pdf = $pdf;
+	}
+	
+	public function drawLogo($pdf,$pageLayout){
+		$cfg = Config::getInstance();
+		$offsetX = $pageLayout->getPageWidth() - $margin - $cfg->logoWidth;
+		$offsetY = $pageLayout->getPageHeight() - $margin - $cfg->logoHeight;
+		$logoPath = realpath($cfg->logo);
+		if(!$logoPath){
+			$logoPath = realpath(__DIR__.'/../'.$cfg->logo);
+		}
+		$pdf->Image($logoPath,$offsetX,$offsetY,$cfg->logoWidth,$cfg->logoHeight);
 	}
 	
 	public function saveTo($filename){
