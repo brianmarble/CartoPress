@@ -183,7 +183,7 @@ class CustomTCPDF extends TCPDF {
 		 * it because it is deprecated, but it works.
 		 */
 		if($object instanceof Imagick){
-			return $object->clone();
+			return @$object->clone();
 		} else {
 			return @clone($object);
 		}
