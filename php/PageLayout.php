@@ -1,5 +1,10 @@
 <?php
-class PageLayout {
+
+interface IPageLayout {
+	public function mapDimensions();	
+}
+
+class PageLayout implements IPageLayout{
 	private $displayName;
 	private $tcpdfName;
 	private $pageWidthInch;
@@ -7,8 +12,15 @@ class PageLayout {
 	private $mapWidthInch;
 	private $mapHeightInch;
 	private $dpi;
-	public function __construct($displayName, $orientation) {
-		$cfg = Config::getInstance ();
+	
+	private $cfg;
+	
+	public function __construct($displayName, $orientation, $cfg=null) {
+		if($cfg == null){
+			$cfg = Config::getInstance ();
+		}
+		$this->cfg = $cfg;
+		
 		$this->displayName = $displayName;
 		$this->tcpdfName = $cfg->pageLayouts [$displayName];
 		$pageSizeInPoints = MapPDF::getPageSize ( $this->tcpdfName );
@@ -79,6 +91,15 @@ class PageLayout {
 	}
 	public function getMapRatio() {
 		return $this->mapWidthInch / $this->mapHeightInch;
+	}
+	
+	public function mapDimensions() {
+		return new Dimensions((object) array(
+			'top' => $this->cfg->margin + $this->cfg->headerSize,
+			'bottom' => $this->pageHeightInch - $this->cfg->margin - $this->cfg->footerSize,
+			'left' => $this->cfg->margin,
+			'right' => $this->pageWidthInch - $this->cfg->margin				
+		));		
 	}
 }
 

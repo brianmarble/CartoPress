@@ -2,6 +2,12 @@
 
 var CartoPress = OpenLayers.Class({
 	
+	units: "english",
+
+	setUnits: function(units){
+		this.units = units;	
+	},
+
 	activate: function(){
 		this._selectPrintAreaControl.activate();
 	},
@@ -70,8 +76,13 @@ var CartoPress = OpenLayers.Class({
 	},
 
 	_createPdf: function(map,bounds,format,orientation,callback){
+		var lonLatBounds = bounds.clone().transform(map.getProjectionObject(), new OpenLayers.Projection("EPSG:4326"));
 		var data = {
-			bounds: bounds,
+			bounds: {
+				proj: bounds,
+				lonlat: lonLatBounds
+			},
+			units: this.units,
 			zoom: map.getZoom(),
 			projection: map.getProjection(),
 			layout: typeof format == "string" ? format : format.name,

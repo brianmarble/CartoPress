@@ -5,7 +5,7 @@ class PDFBuilder {
 		$this->validatePdfSpecs ( $spec );
 		
 		$pageLayout = new PageLayout ( $spec->layout, $spec->orientation );
-		$bounds = $spec->bounds;
+		$bounds = $spec->bounds->proj;
 		$orienation = $spec->orientation == 'portrait' ? 'P' : 'L';
 		
 		$pdf = new MapPDF ( $orienation, 'in', $pageLayout->getTcpdfName () );
@@ -25,14 +25,15 @@ class PDFBuilder {
 		$pdf->SetFontSize ( 12 );
 		$pdf->Write ( 0, $spec->comments );
 		
+		$this->drawScale($pdf, $pageLayout, new Bounds($spec->bounds->lonlat),$spec->units);
 		$this->drawLogo ( $pdf, $pageLayout );
 		
 		$this->pdf = $pdf;
 	}
 	public function drawLogo($pdf, $pageLayout) {
 		$cfg = Config::getInstance ();
-		$offsetX = $pageLayout->getPageWidth () - $margin - $cfg->logoWidth;
-		$offsetY = $pageLayout->getPageHeight () - $margin - $cfg->logoHeight;
+		$offsetX = $pageLayout->getPageWidth () - $cfg->margin - $cfg->logoWidth;
+		$offsetY = $pageLayout->getPageHeight () - $cfg->margin - $cfg->logoHeight;
 		$logoPath = realpath ( $cfg->logo );
 		if (! $logoPath) {
 			$logoPath = realpath ( __DIR__ . '/../' . $cfg->logo );
@@ -62,7 +63,7 @@ class PDFBuilder {
 	private function validatePdfSpecs($spec) {
 		$pageLayout = new PageLayout ( $spec->layout, $spec->orientation );
 		$layoutRatio = $pageLayout->getMapRatio ();
-		$bounds = $spec->bounds;
+		$bounds = $spec->bounds->proj;
 		$specWidth = $bounds->right - $bounds->left;
 		$specHeight = $bounds->top - $bounds->bottom;
 		$specRatio = $specWidth / $specHeight;
@@ -76,6 +77,61 @@ class PDFBuilder {
 		if (! isset ( $spec->comments )) {
 			$spec->comments = '';
 		}
+	}
+	
+	public static function drawScale(MapPDF $pdf, IPageLayout $pageLayout, $bounds, $units){
+		$cfg = Config::getInstance();
+		$isMetric = $units == "metric";
+
+		/* @var $dim Dimensions */
+		$dim = $pageLayout->mapDimensions();
+				
+		$scaleXOffset = .25;
+		$scaleYoffset = .25;
+		$textOffset = .05;
+		
+		$mapMiles = $bounds->getWidth();
+		$mapInches = $pageLayout->getMapWidth();
+		$scaleMaxInches = $cfg->scaleLength;
+		$scaleMaxMiles = $scaleMaxInches * $mapMiles / $mapInches;
+
+		$scaleDistance = $scaleMaxMiles * ($isMetric ? 1.60934 : 1);
+		$scaleDistance = self::reduceToOneSignificantDigit($scaleDistance).($isMetric ? "km" : "mi");
+		$scaleMiles = $isMetric ? $scaleDistance * 0.621371 : $scaleDistance;
+		$scaleInches = $scaleMiles * $mapInches / $mapMiles;
+				
+		$lineHeight = $dim->getBottom() - $scaleYoffset;
+		$lineStart = $dim->getRight() - ($scaleInches + $scaleXOffset);
+		$lineEnd = $dim->getRight() - $scaleXOffset;
+
+		$pdf->Line($lineStart,$lineHeight,$lineEnd,$lineHeight);
+		self::drawTick($pdf,$lineStart,$lineHeight);		
+		self::drawTick($pdf,$lineEnd,$lineHeight);		
+		self::drawCenteredCell($pdf,'0',$lineStart,$lineHeight + $textOffset);
+		self::drawCenteredCell($pdf,$scaleDistance,$lineEnd,$lineHeight + $textOffset);	
+		
+	}
+	
+	public static function drawCenteredCell($pdf,$text,$x,$y){
+		$textWidth = $pdf->GetStringWidth($text,'');
+		$textHeight = $pdf->getStringHeight($text,'');
+		$pdf->setXY($x-($textWidth/2)-.05,$y);
+		$pdf->Cell($textWidth,$textHeight,$text);
+	}
+	
+	public static function drawTick($pdf,$x,$y){
+		$tickSize = .04;
+		$pdf->Line($x,$y-$tickSize,$x,$y+$tickSize);
+	}
+
+	public static function reduceToOneSignificantDigit($num){
+		$powTen = 0;
+		while($num >= 10){
+			$powTen++;
+			$num /= 10;
+		}
+		$num = floor($num)*pow(10,$powTen);
+		return $num;
 	}
 }
 
