@@ -27,6 +27,7 @@ class PDFBuilder {
 		
 		$this->drawScale($pdf, $pageLayout, new Bounds($spec->bounds->lonlat),$spec->units);
 		$this->drawcompass($pdf, $pageLayout);
+		$this->drawBorder($pdf, $pageLayout);
 		$this->drawLogo ( $pdf, $pageLayout );
 		
 		
@@ -90,6 +91,20 @@ class PDFBuilder {
 			$compassPath = realpath ( __DIR__ . '/../' . $cfg->compass );
 		}
 		$pdf->Image ( $compassPath, $offsetX, $offsetY, $cfg->compassWidth, $cfg->compassHeight );	
+	}
+
+	private function drawBorder($pdf, $pageLayout){
+		$cfg = Config::getInstance();
+		
+		$left = $cfg->margin;
+		$top = $cfg->margin+$cfg->headerSize;
+		$right = $left + $pageLayout->getMapWidth('in');
+		$bottom = $top + $pageLayout->getMapHeight('in');
+
+		$pdf->Line($left,$top,$right,$top);
+		$pdf->Line($right,$top,$right,$bottom);
+		$pdf->Line($left,$bottom,$right,$bottom);
+		$pdf->Line($left,$top,$left,$bottom);
 	}
 	
 	public static function drawScale(MapPDF $pdf, IPageLayout $pageLayout, $bounds, $units){
