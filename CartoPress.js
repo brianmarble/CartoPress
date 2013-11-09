@@ -8,7 +8,8 @@
 		"SVGRenderer.js",
 		"SVGConverter.js",
 		"SelectPrintAreaControl.js",
-		"OSM.js"
+		"OSM.js",
+		"Google.js"
 	];
 	var scriptTags = '';
 	for(var i = 0; i < jsFiles.length; i++){

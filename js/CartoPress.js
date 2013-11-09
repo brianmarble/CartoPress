@@ -101,6 +101,8 @@ var CartoPress = OpenLayers.Class({
 				data.layers.push(this._getVectorSpec(layer,bounds));
 			} else if (layer instanceof OpenLayers.Layer.OSM){
 				data.layers.push(new CartoPress.OSM().getSpec(layer,bounds));
+			} else if (layer instanceof OpenLayers.Layer.Google){
+				data.layers.push(new CartoPress.Google().getSpec(layer,bounds));
 			} else {
 				console.log("Not printing layer: "+layer.name,layer);
 			}

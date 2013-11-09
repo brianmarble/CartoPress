@@ -59,6 +59,8 @@ class PDFBuilder {
 			return new SVGLayer ( $layer, $pageLayout, $bounds );
 		} else if ($layer->type == 'osm') {
 			return new OSMLayer ( $layer, $pageLayout, $bounds, $zoom );
+		} else if ($layer->type == 'google') {
+			return new GoogleLayer( $layer, $pageLayout, $bounds);
 		} else {
 			throw new CartoPressException ( "Layer type not found: $layer->type" );
 		}
