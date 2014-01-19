@@ -9,6 +9,8 @@ class GoogleLayer extends Layer {
 		parent::__construct($layer);
 		$this->pageLayout = $pageLayout;
 		
+		$tileSize = 256;
+		
 		
 		function getTileNumbersFromLonLat($lon, $lat, $zoom){
 			// based on http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
@@ -31,7 +33,7 @@ class GoogleLayer extends Layer {
 				'lat' => $latDeg
 			);
 		}
-				
+		
 		// get the tile number of the top left
 		$topLeftTileNumbers = getTileNumbersFromLonLat(
 			$layer->lonLatBounds->left,
@@ -41,8 +43,9 @@ class GoogleLayer extends Layer {
 		$topLeftTileX = floor($topLeftTileNumbers['x']);
 		$topLeftTileY = floor($topLeftTileNumbers['y']);
 		
+		$leftOffset = round(($topLeftTileNumbers['x'] - floor($topLeftTileNumbers['x'])) * $tileSize);
+		$topOffset = round(($topLeftTileNumbers['y'] - floor($topLeftTileNumbers['y'])) * $tileSize);
 		
-		// TODO need to calculate offset
 		
 		// get the tile number of the bottom right
 		$bottomRightTileNumbers = getTileNumbersFromLonLat(
@@ -50,15 +53,18 @@ class GoogleLayer extends Layer {
 			$layer->lonLatBounds->bottom, 
 			$layer->zoom
 		);
-		$bottomRightTileX = ceil($bottomRightTileNumbers['x']);
-		$bottomRightTileY = ceil($bottomRightTileNumbers['y']);
+		$bottomRightTileX = floor($bottomRightTileNumbers['x']);
+		$bottomRightTileY = floor($bottomRightTileNumbers['y']);
 		
+		$rightOffset = $tileSize - round(($bottomRightTileNumbers['x'] - floor($bottomRightTileNumbers['x'])) * $tileSize);
+		$bottomOffset = $tileSize - round(($bottomRightTileNumbers['y'] - floor($bottomRightTileNumbers['y'])) * $tileSize);
 		
 		$imageDealer = new ImageDealer("http://maps.googleapis.com/maps/api/staticmap",(object)array(
 			'sensor' => 'false',
-			'size' => '256x256',
+			'size' => $tileSize.'x'.$tileSize,
 			'maptype' => 'roadmap',
-			'format' => 'roadmap'
+			'format' => 'roadmap',
+			'zoom' => $layer->zoom
 		));
 		
 		$images = array();
@@ -69,10 +75,8 @@ class GoogleLayer extends Layer {
 			for($x = $topLeftTileX; $x <= $bottomRightTileX; $x++){
 				$center = getLonLatFromTileNumbers($x + .5, $y + .5, $layer->zoom);
 				$images[] = $imageDealer->addImage(array(
-					'center' => $center['lat'].','.$center['lon'],
-					'zoom' => $layer->zoom
+					'center' => $center['lat'].','.$center['lon']
 				));
-				
 			}
 		}
 		
@@ -81,120 +85,10 @@ class GoogleLayer extends Layer {
 		$this->grid = (object)array(
 			"colCount" => $bottomRightTileX - $topLeftTileX + 1,
 			"rowCount" => $bottomRightTileY - $topLeftTileY + 1,
-			"width" => ($bottomRightTileX - $topLeftTileX + 1) * 256,
-			"height" => ($bottomRightTileY - $topLeftTileY + 1) * 256,
-			"leftOffset" => 0,
-			"topOffset" => 0,
-		);
-		
-		return;
-		die('happy');
-		
-			// get the center
-			
-			// add the tile
-		
-		// from http://wiki.openstreetmap.org/wiki/Mercator
-		function lon2x($lon) { return deg2rad($lon) * 6378137.0; }
-		function lat2y($lat) { return log(tan(M_PI_4 + deg2rad($lat) / 2.0)) * 6378137.0; }
-		function x2lon($x) { return rad2deg($x / 6378137.0); }
-		function y2lat($y) { return rad2deg(2.0 * atan(exp($y / 6378137.0)) - M_PI_2); }
-
-		
-
-
-		
-		
-		$llb = $layer->lonLatBounds;
-		
-		$tile = new stdClass(); // single image
-		$grid = new stdClass(); // grid of tiles may be bigger than printed map
-		$map = new stdClass(); // final print map
-		
-		$printedMapWidthInPixels = $this->pageLayout->getMapWidth('pixel');
-		$printedMapWidthInLonDeg = $llb->right - $llb->left;
-		$printedMapLonDegPerPx =  $printedMapWidthInPixels / $printedMapWidthInLonDeg;
-		
-		$googleTileWidthInPixels = 640;
-		$googleTilesInRow = ceil($printedMapWidthInPixels / $googleTileWidthInPixels);
-		
-		$printedMapHeigthInPixels = $this->pageLayout->getMapHeight('pixel');
-		$printedMapHeigthInLatDeg = $llb->top - $llb->bottom;
-		$printedMapLatDegPerPx = $printedMapHeigthInPixels / $printedMapHeigthInLatDeg;
-		
-		$googleTileHeightInPixels = 640;
-		$googleTilesInRow = ceil($printedMapHeigthInPixels / $googleTileHeightInPixels);
-		
-		
-		
-		// how many tiles wide and what size of tile
-		$map->widthPx = $this->pageLayout->getMapWidth('pixel');
-		$map->widthLon = $llb->right - $llb->left;
-		$lonsPerPx = $map->widthLon / $map->widthPx;
-		$tile->widthPx = $map->widthPx;
-		$grid->cols = 1;
-		while($tile->widthPx > 700){
-			$grid->cols++;
-			$tile->widthPx = ceil($map->widthPx / $grid->cols / 2) * 2; // needs to be a multiple of two
-		}
-		$tile->widthLon = $tile->widthPx * $lonsPerPx;
-		
-		// how many tiles high and what size of tile
-		$mapPixelHeight = $this->pageLayout->getMapHeight('pixel');
-		$tileHeight = $mapPixelHeight;
-		$tilesInColCount = 1;
-		while($tileHeight > 700){
-			$tilesInColCount++;
-			$tileHeight = ceil($mapPixelHeight / $tilesInColCount / 2) * 2;// needs to be a multiple of two
-		}
-		$lonLatMapHeight = $llb->top - $llb->bottom;
-		$lonLatTileHeight = $tileHeight * $lonLatMapHeight / $mapPixelHeight;
-		
-		//var_dump(
-		//	$mapPixelWidth,
-		//	$tileWidth,
-		//	$tilesInRowCount,
-		//	$mapPixelHeight,
-		//	$tileHeight,
-		//	$tilesInColCount
-		//);
-		
-		$currentCenterX = $firstCenterX = $llb->left + ($tile->widthLon /2);
-		$currentCenterY = $firstCenterY = $llb->top - ($lonLatTileHeight /2);
-		
-		//var_dump(
-		//$lonLatMapWidth,
-		//$lonLatTileWidth,
-		//$lonLatMapHeight,
-		//$lonLatTileHeight,
-		//$currentCenterX,
-		//$currentCenterY
-		//);
-		$images = array();
-		
-		for($row =  0; $row < $tilesInColCount; $row++){
-			for($col =  0; $col < $grid->cols; $col++){
-			
-				$images[] = $imageDealer->addImage(array(
-					'size' => ($tile->widthPx/2).'x'.($tileHeight/2),
-					'center' => $currentCenterY.','.$currentCenterX,
-					'zoom' => $layer->zoom,
-					'maptype' => $layer->maptype
-				));
-				$currentCenterX += $tile->widthLon;
-			}
-			$currentCenterX = $firstCenterX;
-			$currentCenterY -= $lonLatTileHeight;
-		}
-		$this->images = $images;
-		$imageDealer->getImages();
-		$this->grid = (object)array(
-			"colCount" => $grid->cols,
-			"rowCount" => $tilesInColCount,
-			"width" => $map->widthPx,
-			"height" => $mapPixelHeight,
-			"leftOffset" => 0,
-			"topOffset" => 0,
+			"width" => ($bottomRightTileX - $topLeftTileX + 1) * $tileSize - $leftOffset - $rightOffset,
+			"height" => ($bottomRightTileY - $topLeftTileY + 1) * $tileSize - $topOffset - $bottomOffset,
+			"leftOffset" => $leftOffset,
+			"topOffset" => $topOffset,
 		);
 	}
 
@@ -226,12 +120,12 @@ class GoogleLayer extends Layer {
 		}
 		$im->resetiterator();
 		
-		/* @var Imagick */
 		$im2 = $im->appendimages(true);
 				
 		$im2->cropimage($grid->width, $grid->height, $grid->leftOffset, $grid->topOffset);
 
-		$filename = "/tmp/tmp.png"; //ImageDealer::getFilename();
+		//$filename = "/tmp/tmp.png"; //ImageDealer::getFilename();
+		$filename = ImageDealer::getFilename();
 		
 		$im2->writeimage($filename);
 		return $filename;
