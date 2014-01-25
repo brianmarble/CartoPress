@@ -16,7 +16,6 @@ class GoogleLayer extends Layer {
 
 		$targetMapTileWidth = floor($mapPixelWidth / $tileSize / 2) + 1;
 
-
 		$zoom = -1;
 		do {
 			$zoom++;
@@ -49,13 +48,19 @@ class GoogleLayer extends Layer {
 		$rightOffset = $tileSize - round(($bottomRightTileNumbers['x'] - floor($bottomRightTileNumbers['x'])) * $tileSize);
 		$bottomOffset = $tileSize - round(($bottomRightTileNumbers['y'] - floor($bottomRightTileNumbers['y'])) * $tileSize);
 
-		$imageDealer = new ImageDealer("http://maps.googleapis.com/maps/api/staticmap",(object)array(
+		$urlParams = (object)array(
 			'sensor' => 'false',
 			'size' => $tileSize.'x'.$tileSize,
-			'maptype' => 'roadmap',
-			'format' => 'roadmap',
+			'maptype' => $layer->maptype,
 			'zoom' => $zoom
-		));
+		);
+		
+		$config = Config::getInstance();
+		if(property_exists($config,'googleApiKey')){
+			$urlParams->key = $config->googleApiKey;
+		}
+
+		$imageDealer = new ImageDealer("http://maps.googleapis.com/maps/api/staticmap",$urlParams);
 
 		$images = array();
 
