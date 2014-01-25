@@ -149,9 +149,9 @@ class GoogleLayer extends Layer {
 	}
 
 	function getMapTileWidth($bounds,$zoom){
-		$left = floor($this->getTileNumbersFromLonLat($bounds->left,$bounds->top,$zoom)['x']);
-		$right = floor($this->getTileNumbersFromLonLat($bounds->right,$bounds->top,$zoom)['x']);
-		return $right - $left + 1;
+		$left = $this->getTileNumbersFromLonLat($bounds->left,$bounds->top,$zoom);
+		$right = $this->getTileNumbersFromLonLat($bounds->right,$bounds->top,$zoom);
+		return floor($right['x']) - floor($left['x']) + 1;
 	}
 }
 
