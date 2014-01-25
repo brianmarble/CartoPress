@@ -10,32 +10,9 @@ class GoogleLayer extends Layer {
 		$this->pageLayout = $pageLayout;
 		
 		$tileSize = 256;
-		
-		
-		function getTileNumbersFromLonLat($lon, $lat, $zoom){
-			// based on http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
-			$n = pow(2,$zoom);
-			$latRad = deg2rad($lat);
-			return array(
-				'x' => $n * (($lon + 180) / 360),
-				'y' => $n * (1 - (log(tan($latRad) + (1 / cos($latRad))) / pi())) / 2
-			);
-		}
-		
-		function getLonLatFromTileNumbers($x,$y,$zoom){
-			// based on http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
-			$n = pow(2,$zoom);
-			$lonDeg = $x / $n *  360.0 - 180.0;
-			$latRad = atan(sinh( pi() * (1 - 2 * $y / $n)));
-			$latDeg = $latRad * 180.0 / pi();
-			return array(
-				'lon' => $lonDeg,
-				'lat' => $latDeg
-			);
-		}
-		
+				
 		// get the tile number of the top left
-		$topLeftTileNumbers = getTileNumbersFromLonLat(
+		$topLeftTileNumbers = $this->getTileNumbersFromLonLat(
 			$layer->lonLatBounds->left,
 			$layer->lonLatBounds->top, 
 			$layer->zoom
@@ -48,7 +25,7 @@ class GoogleLayer extends Layer {
 		
 		
 		// get the tile number of the bottom right
-		$bottomRightTileNumbers = getTileNumbersFromLonLat(
+		$bottomRightTileNumbers = $this->getTileNumbersFromLonLat(
 			$layer->lonLatBounds->right,
 			$layer->lonLatBounds->bottom, 
 			$layer->zoom
@@ -73,7 +50,7 @@ class GoogleLayer extends Layer {
 		
 		for($y = $topLeftTileY; $y <= $bottomRightTileY; $y++){
 			for($x = $topLeftTileX; $x <= $bottomRightTileX; $x++){
-				$center = getLonLatFromTileNumbers($x + .5, $y + .5, $layer->zoom);
+				$center = $this->getLonLatFromTileNumbers($x + .5, $y + .5, $layer->zoom);
 				$images[] = $imageDealer->addImage(array(
 					'center' => $center['lat'].','.$center['lon']
 				));
@@ -129,6 +106,28 @@ class GoogleLayer extends Layer {
 		
 		$im2->writeimage($filename);
 		return $filename;
+	}
+	
+	function getTileNumbersFromLonLat($lon, $lat, $zoom){
+		// based on http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
+		$n = pow(2,$zoom);
+		$latRad = deg2rad($lat);
+		return array(
+			'x' => $n * (($lon + 180) / 360),
+			'y' => $n * (1 - (log(tan($latRad) + (1 / cos($latRad))) / pi())) / 2
+		);
+	} 
+	
+	function getLonLatFromTileNumbers($x,$y,$zoom){
+		// based on http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
+		$n = pow(2,$zoom);
+		$lonDeg = $x / $n *  360.0 - 180.0;
+		$latRad = atan(sinh( pi() * (1 - 2 * $y / $n)));
+		$latDeg = $latRad * 180.0 / pi();
+		return array(
+			'lon' => $lonDeg,
+			'lat' => $latDeg
+		);
 	}
 }
 
