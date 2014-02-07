@@ -28,6 +28,7 @@ CartoPress.SelectPrintAreaControl = OpenLayers.Class(OpenLayers.Control.ModifyFe
 		var heightDiff = mapArea.getHeight() / printArea.getHeight();
 		
 		printArea = printArea.scale(Math.min(widthDiff,heightDiff) * .75);
+		
 		var pageFeature = new OpenLayers.Feature.Vector(printArea.toGeometry());
 		this.layer.addFeatures(pageFeature);
 		this.selectControl.select(pageFeature);
@@ -52,13 +53,15 @@ CartoPress.SelectPrintAreaControl = OpenLayers.Class(OpenLayers.Control.ModifyFe
 	toRatio: function(bounds,ratio){
 		var size = bounds.getSize(),
 			heightDifference = size.w / ratio - size.h,
-			widthDifference = ratio / size.h - size.w,
+			widthDifference =  size.h / (1/ratio) - size.w,
 			adjustHeight = heightDifference > 0,
 			extendSize = (adjustHeight ? heightDifference : widthDifference)/2,
 			extendSides = adjustHeight ? [3,1] : [2,0],
 			bArray = bounds.toArray();
+			
 		bArray[extendSides[0]] += extendSize;
 		bArray[extendSides[1]] -= extendSize;
+		
 		var newBounds = OpenLayers.Bounds.fromArray(bArray);
 		return newBounds;
 	},
