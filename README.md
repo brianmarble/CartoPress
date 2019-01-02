@@ -1,4 +1,4 @@
 CartoPress
 ==========
 
-Output PDF Maps
+Output PDF Maps from Google Maps API
